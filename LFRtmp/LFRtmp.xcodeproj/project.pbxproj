@@ -229,6 +229,14 @@
 		D833E0711D6C57490029CFFB /* LFRtmpResponseCommand.m in Sources */ = {isa = PBXBuildFile; fileRef = D833DFA41D6C57490029CFFB /* LFRtmpResponseCommand.m */; };
 		D833E0721D6C57490029CFFB /* LFRtmpUrlParser.m in Sources */ = {isa = PBXBuildFile; fileRef = D833DFA61D6C57490029CFFB /* LFRtmpUrlParser.m */; };
 		D833E0741D6C5A4A0029CFFB /* logo.png in Resources */ = {isa = PBXBuildFile; fileRef = D833E0731D6C5A4A0029CFFB /* logo.png */; };
+		D88E872A1D6D6F7900A72E7A /* AVFoundation.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = D88E87291D6D6F7900A72E7A /* AVFoundation.framework */; };
+		D88E872C1D6D6F8F00A72E7A /* CoreAudio.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = D88E872B1D6D6F8F00A72E7A /* CoreAudio.framework */; };
+		D88E872E1D6D6F9700A72E7A /* AudioToolbox.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = D88E872D1D6D6F9700A72E7A /* AudioToolbox.framework */; };
+		D88E87301D6D6FA200A72E7A /* VideoToolbox.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = D88E872F1D6D6FA200A72E7A /* VideoToolbox.framework */; };
+		D88E87321D6D6FAB00A72E7A /* CoreMedia.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = D88E87311D6D6FAB00A72E7A /* CoreMedia.framework */; };
+		D88E87341D6D6FB400A72E7A /* CoreVideo.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = D88E87331D6D6FB400A72E7A /* CoreVideo.framework */; };
+		D88E87361D6D6FBD00A72E7A /* OpenGLES.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = D88E87351D6D6FBD00A72E7A /* OpenGLES.framework */; };
+		D88E87381D6D6FC600A72E7A /* QuartzCore.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = D88E87371D6D6FC600A72E7A /* QuartzCore.framework */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -668,6 +676,14 @@
 		D833DFA51D6C57490029CFFB /* LFRtmpUrlParser.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = LFRtmpUrlParser.h; sourceTree = "<group>"; };
 		D833DFA61D6C57490029CFFB /* LFRtmpUrlParser.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = LFRtmpUrlParser.m; sourceTree = "<group>"; };
 		D833E0731D6C5A4A0029CFFB /* logo.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = logo.png; sourceTree = "<group>"; };
+		D88E87291D6D6F7900A72E7A /* AVFoundation.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = AVFoundation.framework; path = System/Library/Frameworks/AVFoundation.framework; sourceTree = SDKROOT; };
+		D88E872B1D6D6F8F00A72E7A /* CoreAudio.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = CoreAudio.framework; path = System/Library/Frameworks/CoreAudio.framework; sourceTree = SDKROOT; };
+		D88E872D1D6D6F9700A72E7A /* AudioToolbox.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = AudioToolbox.framework; path = System/Library/Frameworks/AudioToolbox.framework; sourceTree = SDKROOT; };
+		D88E872F1D6D6FA200A72E7A /* VideoToolbox.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = VideoToolbox.framework; path = System/Library/Frameworks/VideoToolbox.framework; sourceTree = SDKROOT; };
+		D88E87311D6D6FAB00A72E7A /* CoreMedia.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = CoreMedia.framework; path = System/Library/Frameworks/CoreMedia.framework; sourceTree = SDKROOT; };
+		D88E87331D6D6FB400A72E7A /* CoreVideo.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = CoreVideo.framework; path = System/Library/Frameworks/CoreVideo.framework; sourceTree = SDKROOT; };
+		D88E87351D6D6FBD00A72E7A /* OpenGLES.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = OpenGLES.framework; path = System/Library/Frameworks/OpenGLES.framework; sourceTree = SDKROOT; };
+		D88E87371D6D6FC600A72E7A /* QuartzCore.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = QuartzCore.framework; path = System/Library/Frameworks/QuartzCore.framework; sourceTree = SDKROOT; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -675,6 +691,14 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				D88E87381D6D6FC600A72E7A /* QuartzCore.framework in Frameworks */,
+				D88E87361D6D6FBD00A72E7A /* OpenGLES.framework in Frameworks */,
+				D88E87341D6D6FB400A72E7A /* CoreVideo.framework in Frameworks */,
+				D88E87321D6D6FAB00A72E7A /* CoreMedia.framework in Frameworks */,
+				D88E87301D6D6FA200A72E7A /* VideoToolbox.framework in Frameworks */,
+				D88E872E1D6D6F9700A72E7A /* AudioToolbox.framework in Frameworks */,
+				D88E872C1D6D6F8F00A72E7A /* CoreAudio.framework in Frameworks */,
+				D88E872A1D6D6F7900A72E7A /* AVFoundation.framework in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -684,6 +708,14 @@
 		D833DB4C1D6C56230029CFFB = {
 			isa = PBXGroup;
 			children = (
+				D88E87371D6D6FC600A72E7A /* QuartzCore.framework */,
+				D88E87351D6D6FBD00A72E7A /* OpenGLES.framework */,
+				D88E87331D6D6FB400A72E7A /* CoreVideo.framework */,
+				D88E87311D6D6FAB00A72E7A /* CoreMedia.framework */,
+				D88E872F1D6D6FA200A72E7A /* VideoToolbox.framework */,
+				D88E872D1D6D6F9700A72E7A /* AudioToolbox.framework */,
+				D88E872B1D6D6F8F00A72E7A /* CoreAudio.framework */,
+				D88E87291D6D6F7900A72E7A /* AVFoundation.framework */,
 				D833DB571D6C56230029CFFB /* LFRtmp */,
 				D833DB561D6C56230029CFFB /* Products */,
 			);
