@@ -747,13 +747,13 @@
 		D833DE011D6C57490029CFFB /* LFRtmp */ = {
 			isa = PBXGroup;
 			children = (
-				D833DE021D6C57490029CFFB /* amf */,
+				D833DF981D6C57490029CFFB /* rtmp */,
 				D833DE181D6C57490029CFFB /* device */,
 				D833DE261D6C57490029CFFB /* encode */,
+				D833DE021D6C57490029CFFB /* amf */,
 				D833DE391D6C57490029CFFB /* GPUImage */,
 				D833DF961D6C57490029CFFB /* LFRtmpService.h */,
 				D833DF971D6C57490029CFFB /* LFRtmpService.m */,
-				D833DF981D6C57490029CFFB /* rtmp */,
 			);
 			path = LFRtmp;
 			sourceTree = "<group>";
