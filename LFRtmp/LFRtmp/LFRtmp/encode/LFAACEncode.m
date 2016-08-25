@@ -52,6 +52,7 @@
         return nil;
     }
     data=[NSData dataWithBytes:buffer length:outputBuffer.mBuffers[0].mDataByteSize];
+    free(buffer);
     return data;
 }
 /**

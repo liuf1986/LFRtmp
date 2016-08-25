@@ -82,6 +82,10 @@
         _audioConfig=audioConfig;
         _preview=preview;
         [self setVideoConfig:videoConfig];
+        [[NSNotificationCenter defaultCenter] addObserver:self
+                                                 selector:@selector(chearBuffer)
+                                                     name:UIApplicationDidReceiveMemoryWarningNotification
+                                                   object:nil];
     }
     return self;
 }
@@ -198,6 +202,14 @@
     _isSendFlvVideoSequenceHeader=NO;
     _isSending=NO;
     _isPublishReady=NO;
+    [_mediaSendBuffers removeAllObjects];
+    LFRTMPSERVICE_UNLOCK
+}
+/**
+ *  清理待发送数据
+ */
+-(void)chearBuffer{
+    LFRTMPSERVICE_LOCK
     [_mediaSendBuffers removeAllObjects];
     LFRTMPSERVICE_UNLOCK
 }
@@ -982,5 +994,11 @@
         }
     }
     return NO;
+}
+-(void)dealloc{
+    [[NSNotificationCenter defaultCenter] removeObserver:self
+                                                    name:UIApplicationDidReceiveMemoryWarningNotification
+                                                  object:nil];
+    
 }
 @end
