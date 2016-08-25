@@ -35,7 +35,6 @@
         _videoConfig=videoConfig;
         [self configCamera];
         self.zoomScale = 1.0;
-        self.mirror = YES;
         [[NSNotificationCenter defaultCenter] addObserver:self
                                                  selector:@selector(willEnterBackground:)
                                                      name:UIApplicationWillResignActiveNotification
