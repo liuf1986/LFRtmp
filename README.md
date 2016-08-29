@@ -11,4 +11,4 @@
 ##二. `安装`
 可手动安装下载本项目demo将工程中的LFRtmp目录下源代码添加到项目中即可<br/>
 ##三. `使用`
-下载本项目demo有使用实例,注意AMF下的源文件需使用非arc。请在ViewController的toggleCapture方法中填入邮箱的ramp推流地址。
+下载本项目demo有使用实例,注意AMF下的源文件需使用非arc。请在ViewController的toggleCapture方法中填入相应的rtmp推流地址。
