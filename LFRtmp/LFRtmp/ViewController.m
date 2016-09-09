@@ -56,7 +56,8 @@
     }
     _isStarted=!_isStarted;
 }
--(IBAction)toggleScreen:(id)sender{
+- (void)viewDidLayoutSubviews {
+    [super viewDidLayoutSubviews];
     if(!_isStarted){
         if([rtmpService isLandscape]){
             UIInterfaceOrientation orientation=[[UIApplication sharedApplication] statusBarOrientation];

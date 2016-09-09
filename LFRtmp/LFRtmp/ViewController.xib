@@ -28,7 +28,7 @@
                     <rect key="frame" x="0.0" y="0.0" width="320" height="568"/>
                     <subviews>
                         <button opaque="NO" contentMode="scaleToFill" contentHorizontalAlignment="center" contentVerticalAlignment="center" lineBreakMode="middleTruncation" translatesAutoresizingMaskIntoConstraints="NO" id="1ZL-Yb-McD">
-                            <rect key="frame" x="248" y="20" width="26" height="26"/>
+                            <rect key="frame" x="278" y="20" width="26" height="26"/>
                             <color key="backgroundColor" white="0.0" alpha="0.0" colorSpace="calibratedWhite"/>
                             <constraints>
                                 <constraint firstAttribute="height" constant="26" id="3bF-wY-7aW"/>
@@ -50,7 +50,7 @@
                             <nil key="highlightedColor"/>
                         </label>
                         <button opaque="NO" contentMode="scaleToFill" contentHorizontalAlignment="center" contentVerticalAlignment="center" lineBreakMode="middleTruncation" translatesAutoresizingMaskIntoConstraints="NO" id="lCZ-Kx-2zL">
-                            <rect key="frame" x="212" y="20" width="26" height="26"/>
+                            <rect key="frame" x="242" y="20" width="26" height="26"/>
                             <constraints>
                                 <constraint firstAttribute="width" constant="26" id="1IQ-7Q-QxB"/>
                                 <constraint firstAttribute="height" constant="26" id="pMI-qr-JEu"/>
@@ -69,18 +69,6 @@
                             <state key="normal" image="capture_button.png"/>
                             <connections>
                                 <action selector="toggleCapture:" destination="-1" eventType="touchUpInside" id="6Ug-PV-2NL"/>
-                            </connections>
-                        </button>
-                        <button opaque="NO" contentMode="scaleToFill" contentHorizontalAlignment="center" contentVerticalAlignment="center" lineBreakMode="middleTruncation" translatesAutoresizingMaskIntoConstraints="NO" id="UIe-gl-P7H">
-                            <rect key="frame" x="284" y="20" width="26" height="26"/>
-                            <color key="backgroundColor" white="0.0" alpha="0.0" colorSpace="calibratedWhite"/>
-                            <constraints>
-                                <constraint firstAttribute="width" constant="26" id="8Mm-iz-ldO"/>
-                                <constraint firstAttribute="height" constant="26" id="cVW-pm-liq"/>
-                            </constraints>
-                            <state key="normal" image="screen_switch_sh.png"/>
-                            <connections>
-                                <action selector="toggleScreen:" destination="-1" eventType="touchUpInside" id="q3k-Ul-n8K"/>
                             </connections>
                         </button>
                         <slider opaque="NO" contentMode="scaleToFill" contentHorizontalAlignment="center" contentVerticalAlignment="center" value="1" minValue="1" maxValue="3" translatesAutoresizingMaskIntoConstraints="NO" id="WOy-PJ-Xtp">
@@ -124,7 +112,7 @@
                     <constraints>
                         <constraint firstItem="b7w-ff-x0q" firstAttribute="leading" secondItem="dqI-8d-rz7" secondAttribute="trailing" constant="35" id="3Gc-51-zqj"/>
                         <constraint firstAttribute="bottom" secondItem="dqI-8d-rz7" secondAttribute="bottom" constant="31" id="FY7-MZ-a6i"/>
-                        <constraint firstItem="UIe-gl-P7H" firstAttribute="top" secondItem="JuS-jW-Udk" secondAttribute="top" constant="20" id="KhI-eh-nLy"/>
+                        <constraint firstAttribute="trailing" secondItem="1ZL-Yb-McD" secondAttribute="trailing" constant="16" id="I9z-MU-zye"/>
                         <constraint firstAttribute="bottom" secondItem="b7w-ff-x0q" secondAttribute="bottom" constant="25" id="Lpo-xp-cRU"/>
                         <constraint firstItem="b7w-ff-x0q" firstAttribute="top" secondItem="WOy-PJ-Xtp" secondAttribute="bottom" constant="18" id="RKd-OF-zNq"/>
                         <constraint firstItem="b7w-ff-x0q" firstAttribute="centerX" secondItem="JuS-jW-Udk" secondAttribute="centerX" id="YOH-XF-n3n"/>
@@ -134,8 +122,6 @@
                         <constraint firstItem="1ZL-Yb-McD" firstAttribute="top" secondItem="JuS-jW-Udk" secondAttribute="top" constant="20" id="f2c-fM-9ry"/>
                         <constraint firstItem="lCZ-Kx-2zL" firstAttribute="top" secondItem="JuS-jW-Udk" secondAttribute="top" constant="20" id="fOy-m0-r9W"/>
                         <constraint firstItem="jnk-hi-SLt" firstAttribute="top" secondItem="JuS-jW-Udk" secondAttribute="top" constant="23" id="fTY-Fc-ebs"/>
-                        <constraint firstItem="UIe-gl-P7H" firstAttribute="leading" secondItem="1ZL-Yb-McD" secondAttribute="trailing" constant="10" id="mGd-ex-RWp"/>
-                        <constraint firstAttribute="trailing" secondItem="UIe-gl-P7H" secondAttribute="trailing" constant="10" id="nhG-J9-qaw"/>
                         <constraint firstItem="jnk-hi-SLt" firstAttribute="leading" secondItem="JuS-jW-Udk" secondAttribute="leading" constant="10" id="phs-82-rC5"/>
                         <constraint firstItem="WOy-PJ-Xtp" firstAttribute="leading" secondItem="JuS-jW-Udk" secondAttribute="leading" constant="18" id="tkd-tR-gwP"/>
                         <constraint firstAttribute="bottom" secondItem="278-Qb-nIr" secondAttribute="bottom" constant="31" id="vti-TG-wXf"/>
@@ -162,6 +148,5 @@
         <image name="btn_flip_a.png" width="52" height="52"/>
         <image name="capture_button.png" width="120" height="120"/>
         <image name="done.png" width="49" height="49"/>
-        <image name="screen_switch_sh.png" width="52" height="52"/>
     </resources>
 </document>

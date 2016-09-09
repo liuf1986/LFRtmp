@@ -45,8 +45,8 @@ typedef enum : char {
 /**
  *  用于RTMP连接的命令数据块
  *
- *  @param appName 例如有推流路径为rtmp://userpush.livecdn.cditv.cn/userlive/liuf，appName则为userlive
- *  @param tcUrl 例如有推流路径为rtmp://userpush.livecdn.cditv.cn/userlive/liuf，tcUrl则为rtmp://userpush.livecdn.cditv.cn/userlive
+ *  @param appName 例如有推流路径为rtmp://xxx/userlive/liuf，appName则为userlive
+ *  @param tcUrl 例如有推流路径为rtmp://xxx/userlive/liuf，tcUrl则为rtmp://xxx/userlive
  *  @return NSData。
  */
 -(NSData *)connectChunkFormat:(NSString *)appName tcUrl:(NSString *)tcUrl;

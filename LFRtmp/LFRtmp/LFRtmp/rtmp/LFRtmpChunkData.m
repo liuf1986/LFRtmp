@@ -175,7 +175,11 @@ static int sendTransactionID=1;
         if(byte!=0x2){
             NSLog(@"--------------RTMP：调用parseCommand失败，命令消息的首字节必须为0x2！--------------");
         }else{
-            command=[[LFRtmpResponseCommand alloc] init:_data];
+            @try {
+                command=[[LFRtmpResponseCommand alloc] init:_data];   
+            } @catch (NSException *exception) {
+                NSLog(@"--------------RTMP：调用parseCommand失败，原因：%@！--------------",[exception reason]);
+            }
         }
     }
     return command;
@@ -185,8 +189,8 @@ static int sendTransactionID=1;
 /**
  *  用于拼装RTMP连接命令的数据结构
  *
- *  @param appName 例如有推流路径为rtmp://userpush.livecdn.cditv.cn/userlive/liuf，appName则为userlive
- *  @param tcUrl 例如有推流路径为rtmp://userpush.livecdn.cditv.cn/userlive/liuf，tcUrl则为rtmp://userpush.livecdn.cditv.cn/userlive
+ *  @param appName 例如有推流路径为rtmp://xxx/userlive/liuf，appName则为userlive
+ *  @param tcUrl 例如有推流路径为rtmp://xxx/userlive/liuf，tcUrl则为rtmp://xxx/userlive
  *  @return 返回拼装好的数据块。
  */
 +(NSData *)connectData:(NSString *)appName tcUrl:(NSString *)tcUrl{
