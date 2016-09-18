@@ -124,13 +124,18 @@
  *  启动采集
  */
 -(void)startOuput{
-    OSStatus status=AudioOutputUnitStart(_audioComInstance);
-    if(status!=noErr){
-        NSError *error = [NSError errorWithDomain:NSOSStatusErrorDomain
-                                             code:status
-                                         userInfo:nil];
-        NSLog(@"-------------启动音频采集失败：%@！------------- ", [error description]);
-    }
+    AVAudioSession *session=[AVAudioSession sharedInstance];
+    [session requestRecordPermission:^(BOOL granted) {
+        if(granted){
+            OSStatus status=AudioOutputUnitStart(_audioComInstance);
+            if(status!=noErr){
+                NSError *error = [NSError errorWithDomain:NSOSStatusErrorDomain
+                                                     code:status
+                                                 userInfo:nil];
+                NSLog(@"-------------启动音频采集失败：%@！------------- ", [error description]);
+            }
+        }
+    }];
 }
 -(void)dealloc{
     [[NSNotificationCenter defaultCenter] removeObserver:self

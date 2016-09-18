@@ -34,5 +34,11 @@
 		<string>UIInterfaceOrientationLandscapeLeft</string>
 		<string>UIInterfaceOrientationLandscapeRight</string>
 	</array>
+	<key>NSCameraUsageDescription</key>
+	<string>拍照和视频录制</string>
+	<key>NSPhotoLibraryUsageDescription</key>
+	<string>存储图片</string>
+	<key>NSMicrophoneUsageDescription</key>
+	<string>录音</string>
 </dict>
 </plist>
