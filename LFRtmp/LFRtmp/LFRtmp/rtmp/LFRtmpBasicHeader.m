@@ -41,15 +41,9 @@
     LFRtmpBasicHeaderFmtType fmt=[LFRtmpBasicHeader getFmtType:headerData>>6];
     uint8_t streamIdData=headerData<<2;
     streamIdData=streamIdData>>2;
-    LFRtmpBasicHeaderChunkStreamID streamID=[LFRtmpBasicHeader getChunkStreamID:streamIdData];
-    if(fmt==LFRtmpBasicHeaderFmtUnkonwn||streamID==LFRtmpBasicHeaderUnkonwn){
-        NSLog(@"--------------RTMP：调用basicHeader失败，数据不满足格式要求！--------------");
-        return nil;
-    }else{
-        return [[LFRtmpBasicHeader alloc] init:fmt
-                                 chunkStreamID:streamID
-                                     byteCount:(LFRtmpBasicHeaderByteCount1)];
-    }
+    return [[LFRtmpBasicHeader alloc] init:fmt
+                             chunkStreamID:streamIdData
+                                 byteCount:(LFRtmpBasicHeaderByteCount1)];
 }
 
 /**
@@ -129,29 +123,5 @@
             break;
     }
     return fmt;
-}
-
-+(LFRtmpBasicHeaderChunkStreamID)getChunkStreamID:(uint8_t)streamIDData{
-    LFRtmpBasicHeaderChunkStreamID streamID=LFRtmpBasicHeaderUnkonwn;
-    switch (streamIDData) {
-        case LFRtmpBasicHeaderProControlStreamID:
-        {
-            streamID=LFRtmpBasicHeaderProControlStreamID;
-        }
-            break;
-        case LFRtmpBasicHeaderCommandStreamID:
-        {
-            streamID=LFRtmpBasicHeaderCommandStreamID;
-        }
-            break;
-        case LFRtmpBasicHeaderMediaStreamID:
-        {
-            streamID=LFRtmpBasicHeaderMediaStreamID;
-        }
-            break;
-        default:
-            break;
-    }
-    return streamID;
 }
 @end

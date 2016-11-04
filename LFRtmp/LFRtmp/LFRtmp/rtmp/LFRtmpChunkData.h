@@ -74,8 +74,8 @@ typedef enum : char {
 /**
  *  用于拼装RTMP连接命令的AMF0数据结构
  *
- *  @param appName 例如有推流路径为rtmp://xxx/userlive/liuf，appName则为userlive
- *  @param tcUrl 例如有推流路径为rtmp://xxx/userlive/liuf，tcUrl则为rtmp://xxx/userlive
+ *  @param appName 例如有推流路径为rtmp://xx.com/userlive/liuf，appName则为userlive
+ *  @param tcUrl 例如有推流路径为rtmp://xx.com/userlive/liuf，tcUrl则为rtmp://xx.com/userlive
  *  @return NSData。
  */
 +(NSData *)connectData:(NSString *)appName tcUrl:(NSString *)tcUrl;

@@ -35,8 +35,7 @@ typedef enum : char {
 typedef enum : int {
     LFRtmpBasicHeaderProControlStreamID=0x2,//协议控制块流ID
     LFRtmpBasicHeaderCommandStreamID=0x3, //控制块流的ID
-    LFRtmpBasicHeaderMediaStreamID=0x4, //音视频块流的ID
-    LFRtmpBasicHeaderUnkonwn=0x7f //未知类型
+    LFRtmpBasicHeaderMediaStreamID=0x4 //音视频块流的ID
 } LFRtmpBasicHeaderChunkStreamID;
 @interface LFRtmpBasicHeader : NSObject
 

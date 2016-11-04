@@ -56,7 +56,10 @@ typedef enum : NSUInteger {
  *  是否打开闪光灯
  */
 @property (assign,nonatomic) BOOL isOpenFlash;
-
+/**
+ *  是否启用面部识别功能
+ */
+@property (assign,nonatomic) BOOL isEnableFace;
 /**
  *  是否横屏
  */
@@ -73,6 +76,10 @@ typedef enum : NSUInteger {
  *  水印
  */
 @property (strong,nonatomic) UIView *logoView;
+/**
+ *  贴纸
+ */
+@property (strong,nonatomic) UIView *faceView;
 /**
  *  初始化
  *

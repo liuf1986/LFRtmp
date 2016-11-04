@@ -23,20 +23,47 @@
 #import "LFVideoHardEncode.h"
 #import "LFVideoSoftEncode.h"
 @interface LFRTMPReadBuffer : NSObject
-@property (nonatomic,assign)int size;
+@property (nonatomic,assign)int size;//已读取的数据
+@property (nonatomic,assign)int expectedSize;//预计读取的大小,如果给定值则需读取到指定大小的数据，如果是0则不限制
 @property (nonatomic,assign) BOOL isTimeout;
+@property (nonatomic,assign,readonly)int unReadStartIndex;
 @end
 
 @implementation LFRTMPReadBuffer
 {
-   char _buffer[RTMP_BUFFER_SIZE];
+    char _buffer[RTMP_BUFFER_SIZE];
+}
+-(instancetype)init{
+    if(self=[super init]){
+        _expectedSize=1;
+    }
+    return self;
 }
 -(char *)getBuffer{
     return _buffer;
 }
+/**
+ *  获取知道长度的数据
+ *
+ *  @param expectedSize 预计要取的数据长度
+ */
+-(NSMutableData *)getExpectedBuffer:(int)expectedSize{
+    if(self.size-_unReadStartIndex>=expectedSize){
+        NSMutableData *data=[NSMutableData new];
+        [data setLength:expectedSize];
+        uint8_t *bytes=[data mutableBytes];
+        for(int i=0;i<expectedSize;i++){
+            bytes[i]=_buffer[_unReadStartIndex+i];
+        }
+        _unReadStartIndex+=expectedSize;
+        return data;
+    }else{
+        return nil;
+    }
+}
 
 @end
-@interface LFRtmpService()<LFRtmpChunkFormatDelegate,LFMicDeviceDelegate,LFCameraDeviceDelegate,LFVideoEncodeDelegate>
+@interface LFRtmpService()<LFMicDeviceDelegate,LFCameraDeviceDelegate,LFVideoEncodeDelegate>
 @property (assign,nonatomic) BOOL isSending;
 @end
 @implementation LFRtmpService
@@ -78,7 +105,6 @@
         _isSocketConnect=NO;
         _isSending=NO;
         _rtmpChunkFormat=[[LFRtmpChunkFormat alloc] init];
-        _rtmpChunkFormat.delegate=self;
         _audioConfig=audioConfig;
         _preview=preview;
         [self setVideoConfig:videoConfig];
@@ -102,6 +128,13 @@
 -(void)setIsOpenFlash:(BOOL)isOpenFlash{
     _cameraDevice.isOpenFlash=isOpenFlash;
     _isOpenFlash=isOpenFlash;
+}
+/**
+ *  是否启用贴纸
+ */
+-(void)setIsEnableFace:(BOOL)isEnableFace{
+    _cameraDevice.isEnableFace=isEnableFace;
+    _isEnableFace=isEnableFace;
 }
 /**
  *  摄像头选取
@@ -140,6 +173,13 @@
     _logoView=logoView;
 }
 /**
+ *  贴纸
+ */
+-(void)setFaceView:(UIView *)faceView{
+    [_cameraDevice setFaceView:faceView];
+    _faceView=faceView;
+}
+/**
  *  启动连接
  *
  *  @param hostname 主机串
@@ -150,15 +190,16 @@
     _urlParser=[[LFRtmpUrlParser alloc] initWithUrl:url port:port];
     __weak __typeof(self)weakSelf = self;
     dispatch_async(_qunue, ^{
+        __strong __typeof(weakSelf)strongSelf = weakSelf;
         while (![self connect:_urlParser.domain port:_urlParser.port]) {
             dispatch_async(dispatch_get_main_queue(), ^{
-                __strong __typeof(weakSelf)strongSelf = weakSelf;
                 if(strongSelf.delegate&&[strongSelf.delegate respondsToSelector:@selector(onRtmpStatusChange:)]){
                     [strongSelf.delegate onRtmpStatusChange:LFRTMPStatusConnectionFail];
                 }
             });
             [[NSRunLoop currentRunLoop] runUntilDate:[NSDate dateWithTimeIntervalSinceNow:0.01f]];
         }
+        [strongSelf listenSocketRecv];
     });
 }
 
@@ -335,48 +376,56 @@
  */
 -(BOOL)handShake{
     BOOL isHandSucc=NO;
-    char C0C1[RTMP_HANDSHAKE_BITSIZE+1];
+    char c0c1[RTMP_HANDSHAKE_BITSIZE+1];
     for(int i=0;i<RTMP_HANDSHAKE_BITSIZE+1;i++){
         //C0是一字节的RTMP协议的版本信息，此信息目前写死为3
         if(i==0){
-            C0C1[i]=0x03;
+            c0c1[i]=0x03;
         }
         //C1前四位为时间戳,可以设置为0
         else if(i>0&&i<5){
-            C0C1[i]=0x0;
+            c0c1[i]=0x0;
             //C1中间四位全是0，
         }else if(i>4&&i<9){
-            C0C1[i]=0x0;
+            c0c1[i]=0x0;
         }else{
             //C1剩余的1528字节为随机数
-            C0C1[i]=rand();
+            c0c1[i]=rand();
         }
     }
-    if([self write:C0C1 length:sizeof(C0C1)]){
+    if([self write:c0c1 length:sizeof(c0c1)]){
         //读取S0S1S2
-         LFRTMPReadBuffer *S0S1S2=[LFRTMPReadBuffer new];
-        if([self read:S0S1S2]){
-            if(S0S1S2.size==RTMP_HANDSHAKE_BITSIZE*2+1){
+        LFRTMPReadBuffer *s0s1s2=[LFRTMPReadBuffer new];
+        s0s1s2.expectedSize=1;
+        if([self read:s0s1s2]){
+            NSMutableData *s0=[s0s1s2 getExpectedBuffer:s0s1s2.expectedSize];
+            if(s0){
+                char *bytes=[s0 mutableBytes];
                 //验证S0;S0是服务器返回的一字节的RTMP协议的版本信息，目前为3
-                if([S0S1S2 getBuffer][0]==0x3){
-                    //验证S2,S2的数据和C1保持一致，但可能不同的服务器实现不一样
-                    BOOL iSCorrect=YES;
-                    int flag=1;
-                    for(int i=RTMP_HANDSHAKE_BITSIZE+1;i<S0S1S2.size;i++){
-                        if([S0S1S2 getBuffer][i]!=C0C1[flag++]){
-                            iSCorrect=NO;
-                            break;
-                        }
-                    }
-                    if(iSCorrect){
-                        //获取S1
-                        char S1[RTMP_HANDSHAKE_BITSIZE];
-                        for(int i=1;i<RTMP_HANDSHAKE_BITSIZE+1;i++){
-                            S1[i-1]=[S0S1S2 getBuffer][i];
-                        }
-                        //发送C2，C2的数据可和S1保持一致
-                        if([self write:S1 length:sizeof(S1)]){
-                            isHandSucc=YES;
+                s0s1s2.expectedSize=RTMP_HANDSHAKE_BITSIZE;
+                if(bytes[0]==c0c1[0]&&[self read:s0s1s2]){
+                    NSMutableData *s1=[s0s1s2 getExpectedBuffer:s0s1s2.expectedSize];
+                    s0s1s2.expectedSize=RTMP_HANDSHAKE_BITSIZE;
+                    if(s1&&[self read:s0s1s2]){
+                        NSMutableData *s2=[s0s1s2 getExpectedBuffer:s0s1s2.expectedSize];
+                        if(s2){
+                            //验证S2,S2的数据和C1保持一致，但可能不同的服务器实现不一样
+                            BOOL iSCorrect=YES;
+                            bytes=[s2 mutableBytes];
+                            for(int i=0;i<s2.length;i++){
+                                if(bytes[i]!=c0c1[i+1]){
+                                    iSCorrect=NO;
+                                    break;
+                                }
+                            }
+                            if(iSCorrect){
+                                //获取S1
+                                bytes=[s1 mutableBytes];
+                                //发送C2，C2的数据可和S1保持一致
+                                if([self write:bytes length:(int)s1.length]){
+                                    isHandSucc=YES;
+                                }
+                            }
                         }
                     }
                 }
@@ -393,7 +442,7 @@
  *
  *  @return 是否写成功
  */
--(BOOL)write:(const char *)buffer length:(int)n{
+-(BOOL)write:(const void *)buffer length:(int)n{
     BOOL isWriteSucc=YES;
     const char *pBuffer=buffer;
     while (n>0) {
@@ -460,7 +509,7 @@
             rtmpHeaderLength+=4;
         }
         BOOL isReConnect=NO;
-        int chunkSize=_rtmpChunkFormat.chunkSize;
+        int chunkSize=_rtmpChunkFormat.outChunkSize;
         int count=ceil((data.length-rtmpHeaderLength)/(chunkSize+0.0));
         //拆分数据将大数据拆分为小的chunk块
         for(int i=0;i<count;i++){
@@ -537,9 +586,11 @@
  */
 -(BOOL)read:(LFRTMPReadBuffer *)readBuf{
     BOOL isReadSucc=YES;
+    int n=readBuf.expectedSize-(readBuf.size-readBuf.unReadStartIndex);
     ssize_t bytes=0;
-    while (YES) {
-        bytes=recv(_socket, [readBuf getBuffer], RTMP_BUFFER_SIZE, 0);
+    while (n>0) {
+        char buffer[RTMP_BUFFER_SIZE-readBuf.size];
+        bytes=recv(_socket, buffer, RTMP_BUFFER_SIZE-readBuf.size, 0);
         if(bytes<0){
             //如果是被系统呼叫中断如有电话进来则继续读取
             if(errno==EINTR){
@@ -551,11 +602,296 @@
                 break;
             }
         }else{
+            for(int i=0;i<bytes;i++){
+                [readBuf getBuffer][readBuf.size+i]=buffer[i];
+            }
             readBuf.size+=(int)bytes;
-            break;
+            n=readBuf.expectedSize-(readBuf.size-readBuf.unReadStartIndex);
         }
     }
     return isReadSucc;
+}
+/**
+ *  监听socket的响应直到可以推流为止
+ */
+-(void)listenSocketRecv{
+    LFRTMPReadBuffer *buffer=[LFRTMPReadBuffer new];
+    LFRtmpBasicHeader *preBasicHeader=nil;
+    while (!_isPublishReady) {
+        buffer.expectedSize=1;
+        if([self read:buffer]){
+            BOOL isParseSuccess=YES;
+            NSMutableData *data=[buffer getExpectedBuffer:buffer.expectedSize];
+            if(data){
+                char *byte=[data mutableBytes];
+                //通过首字节获取header基本信息
+                LFRtmpBasicHeader *basicHeader=[LFRtmpBasicHeader basicHeader:byte[0]];
+                if(basicHeader){
+                    if(preBasicHeader==nil||preBasicHeader.chunkStreamID!=basicHeader.chunkStreamID){
+                        preBasicHeader=basicHeader;
+                    }
+                    switch (basicHeader.fmtType) {
+                        case LFRtmpBasicHeaderFmtLarge:
+                        {
+                            buffer.expectedSize=LFRtmpMessageHeaderSizeLarge;
+                        }
+                            break;
+                        case LFRtmpBasicHeaderFmtMedium:
+                        {
+                            buffer.expectedSize=LFRtmpMessageHeaderSizeMedium;
+                        }
+                            break;
+                        case LFRtmpBasicHeaderFmtSmall:
+                        {
+                            buffer.expectedSize=LFRtmpMessageHeaderSizeSmall;
+                        }
+                            break;
+                        default:
+                            break;
+                    }
+                    //获取header的主体信息
+                    data=[buffer getExpectedBuffer:buffer.expectedSize];
+                    if(data){
+                        switch (basicHeader.fmtType) {
+                            case LFRtmpBasicHeaderFmtLarge:
+                            {
+                                LFRtmpMessageHeader *msgHeader=[LFRtmpMessageHeader messageHeader:basicHeader.fmtType
+                                                                                             data:data];
+                                //启用扩展时间戳
+                                if(msgHeader.timestamp>=kMessageThreeByteMax){
+                                    buffer.expectedSize=4;
+                                    if([self read:buffer]){
+                                        NSMutableData *extendDate=[buffer getExpectedBuffer:buffer.expectedSize];
+                                        if(extendDate){
+                                            LFRtmpExtendedTimestamp *extendedTimestamp=[LFRtmpExtendedTimestamp extendedTimestamp:extendDate];
+                                            msgHeader.extendTimestamp=extendedTimestamp;
+                                        }else{
+                                            isParseSuccess=NO;
+                                        }
+                                    }else{
+                                        isParseSuccess=NO;
+                                    }
+                                }
+                                basicHeader.messageHeader=msgHeader;
+                            }
+                                break;
+                            case LFRtmpBasicHeaderFmtMedium:
+                            {
+                                LFRtmpMessageHeader *msgHeader=[LFRtmpMessageHeader messageHeader:basicHeader.fmtType
+                                                                                             data:data];
+                                //启用扩展时间戳
+                                if(msgHeader.timestamp>=kMessageThreeByteMax){
+                                    buffer.expectedSize=4;
+                                    if([self read:buffer]){
+                                        NSMutableData *extendDate=[buffer getExpectedBuffer:buffer.expectedSize];
+                                        if(extendDate){
+                                            LFRtmpExtendedTimestamp *extendedTimestamp=[LFRtmpExtendedTimestamp extendedTimestamp:extendDate];
+                                            msgHeader.extendTimestamp=extendedTimestamp;
+                                        }else{
+                                            isParseSuccess=NO;
+                                        }
+                                    }else{
+                                        isParseSuccess=NO;
+                                    }
+                                }
+                                //补齐缺失的信息
+                                if(preBasicHeader){
+                                    msgHeader.streamID=preBasicHeader.messageHeader.streamID;
+                                }
+                                basicHeader.messageHeader=msgHeader;
+                            }
+                                break;
+                            case LFRtmpBasicHeaderFmtSmall:
+                            {
+                                LFRtmpMessageHeader *msgHeader=[LFRtmpMessageHeader messageHeader:basicHeader.fmtType
+                                                                                             data:data];
+                                //启用扩展时间戳
+                                if(msgHeader.timestamp>=kMessageThreeByteMax){
+                                    buffer.expectedSize=4;
+                                    if([self read:buffer]){
+                                        NSMutableData *extendDate=[buffer getExpectedBuffer:buffer.expectedSize];
+                                        if(extendDate){
+                                            LFRtmpExtendedTimestamp *extendedTimestamp=[LFRtmpExtendedTimestamp extendedTimestamp:extendDate];
+                                            msgHeader.extendTimestamp=extendedTimestamp;
+                                        }else{
+                                            isParseSuccess=NO;
+                                        }
+                                    }else{
+                                        isParseSuccess=NO;
+                                    }
+                                }
+                                //补齐缺失的信息
+                                if(preBasicHeader){
+                                    msgHeader.streamID=preBasicHeader.messageHeader.streamID;
+                                    msgHeader.length=preBasicHeader.messageHeader.length;
+                                    msgHeader.typeID=preBasicHeader.messageHeader.typeID;
+                                }
+                                basicHeader.messageHeader=msgHeader;
+                            }
+                                break;
+                            case LFRtmpBasicHeaderFmtMin:
+                            {
+                                //和上一个块的message header完全一致
+                                if(preBasicHeader){
+                                    basicHeader.messageHeader=preBasicHeader.messageHeader;
+                                }
+                            }
+                                break;
+                            default:
+                                break;
+                        }
+                        //读取chunk data数据
+                        if(basicHeader.messageHeader.length>0){
+                            //获取chunk data 分隔符的数量
+                            int chunkPacketSplitNum=ceil(basicHeader.messageHeader.length/[_rtmpChunkFormat inChunkSize]);
+                            buffer.expectedSize=chunkPacketSplitNum+basicHeader.messageHeader.length;
+                            if([self read:buffer]){
+                                NSMutableData *chunk=[buffer getExpectedBuffer:buffer.expectedSize];
+                                char *chunkBytes=[chunk mutableBytes];
+                                if(chunk){
+                                    //如果是命令消息则判断首字节是否是0x2,因为命令消息的前部都是以字符串表示命令名称
+                                    //而在AMF0中字符串类型是0x2
+                                    if(basicHeader.messageHeader.typeID==LFRtmpCommandMessage){
+                                        uint8_t byte=chunkBytes[0];
+                                        if(byte!=0x2){
+                                            NSLog(@"--------------RTMP：调用listenSocketRecv失败，命令消息的首字节必须为0x2！--------------");
+                                           isParseSuccess=NO;
+                                        }
+                                    }
+                                    if(chunk.length<=_rtmpChunkFormat.inChunkSize){
+                                        basicHeader.chunkData=[[LFRtmpChunkData alloc] init:chunk];
+                                    }else{
+                                        NSMutableData *chunkData=[NSMutableData new];
+                                        [chunkData setLength:chunk.length];
+                                        char *bytes=[chunkData mutableBytes];
+                                        for(int i=0,j=0;i<chunk.length;i++){
+                                            //如果一个包的大小超过chunk size的大小（如果没有设置默认为128b）则128整倍数位上的数据不计入有效数据
+                                            //这种数据称为包分隔符，包分隔符的规则为0xc0|chunk stream ID
+                                            //例如如果是协议控制块流则chunk stream ID为0x2，包分隔符=0xc0|0x2=0xc2
+                                            if(i==0){
+                                                bytes[j++]=chunkBytes[i];
+                                            }else if(i%_rtmpChunkFormat.inChunkSize!=0){
+                                                bytes[j++]=chunkBytes[i];
+                                            }
+                                        }
+                                        basicHeader.chunkData=[[LFRtmpChunkData alloc] init:chunkData];
+                                    }
+                                    [self handChunkData:basicHeader];
+                                }else{
+                                    isParseSuccess=NO;
+                                }
+                            }else{
+                                isParseSuccess=NO;
+                            }
+                        }
+                    }else{
+                        isParseSuccess=NO;
+                    }
+                }else{
+                    isParseSuccess=NO;
+                }
+            }
+            if(!isParseSuccess){
+                break;
+            }
+        }else{
+            break;
+        }
+        [[NSRunLoop currentRunLoop] runUntilDate:[NSDate dateWithTimeIntervalSinceNow:0.01f]];
+    }
+    if(!_isPublishReady){
+        [self reStart];
+    }
+}
+/**
+ *  处理chunk data的数据跳转
+ *
+ *  @param basicHeader
+ */
+-(void)handChunkData:(LFRtmpBasicHeader *)basicHeader{
+    switch (basicHeader.messageHeader.typeID) {
+        case LFRtmpProControlSetChunkSizeMessage:
+        {
+            _rtmpChunkFormat.inChunkSize=[basicHeader.chunkData parseSetChunkSize];
+        }
+            break;
+        case LFRtmpProControlAbortMessage:
+        {
+            _rtmpChunkFormat.abortChunkStreamID=[basicHeader.chunkData parseAbortMessage];
+        }
+            break;
+        case LFRtmpProControlAckMessage:
+        {
+            _rtmpChunkFormat.acknowledgementSeq=[basicHeader.chunkData parseAcknowledgement];
+        }
+            break;
+        case LFRtmpProControlWindowAckSizeMessage:
+        {
+            _rtmpChunkFormat.windowAckSize=[basicHeader.chunkData parseWindowAckSize];
+        }
+            break;
+        case LFRtmpProControlSetPeerBandWidthMessage:
+        {
+            NSDictionary *dic=[basicHeader.chunkData parseBandWidth];
+            _rtmpChunkFormat.bandWidth=[[dic valueForKey:kBandWidthSize] intValue];
+            _rtmpChunkFormat.bandWidthLimiType=[[dic valueForKey:kBandWidthLimitType] charValue];
+        }
+            break;
+        case LFRtmpUserControlMessage:
+        {
+            _rtmpChunkFormat.isStreamBegin=[basicHeader.chunkData parseUserCtrlStreamBegin];
+        }
+            break;
+        case LFRtmpCommandMessage:
+        {
+            LFRtmpResponseCommand *command=[basicHeader.chunkData parseCommand];
+            if(command.commandType==LFRtmpResponseCommand_Result){
+                if(command.optionObject&&command.getOptionObjectDictionary){
+                    NSString *code=[command optionObjectValueForKey:@"code"];
+                    if([code isEqualToString:kLFRtmpConnectSuccess]){
+                        [self sendReleaseStream];
+                        [self sendFCPublish];
+                        [self sendCreateStream];
+                        [self sendPublishStream];
+                    }
+                    if(command.optionObject&&[command.optionObject isKindOfClass:[NSNumber class]]){
+                        _streamID=[(NSNumber *)command.optionObject intValue];
+                    }
+                }
+            }else if(command.commandType==LFRtmpResponseCommandOnStatus){
+                if(command.optionObject&&command.getOptionObjectDictionary){
+                    NSString *code=[command optionObjectValueForKey:@"code"];
+                    __weak __typeof(self)weakSelf = self;
+                    if([code isEqualToString:kLFRtmpPublishStart]){
+                        LFRTMPSERVICE_LOCK
+                        _isPublishReady=YES;
+                        LFRTMPSERVICE_UNLOCK
+                        NSLog(@"--------------RTMP：解析publish响应成功！推流准备就绪！！--------------");
+                        dispatch_async(dispatch_get_main_queue(), ^{
+                            __strong __typeof(weakSelf)strongSelf = weakSelf;
+                            if(strongSelf.delegate&&[strongSelf.delegate respondsToSelector:@selector(onRtmpStatusChange:)]){
+                                [strongSelf.delegate onRtmpStatusChange:LFRTMPStatusPublishReady];
+                            }
+                        });
+                    }else{
+                        NSLog(@"--------------RTMP：解析publish响应失败！--------------");
+                        LFRTMPSERVICE_LOCK
+                        _isPublishReady=NO;
+                        LFRTMPSERVICE_UNLOCK
+                        dispatch_async(dispatch_get_main_queue(), ^{
+                            __strong __typeof(weakSelf)strongSelf = weakSelf;
+                            if(strongSelf.delegate&&[strongSelf.delegate respondsToSelector:@selector(onRtmpStatusChange:)]){
+                                [strongSelf.delegate onRtmpStatusChange:LFRTMPStatusPublishFail];
+                            }
+                        });
+                    }
+                }
+            }
+        }
+            break;
+        default:
+            break;
+    }
 }
 /**
  *  发送连接请求
@@ -565,21 +901,11 @@
 -(BOOL)sendConnPacket{
     NSData *data=[_rtmpChunkFormat connectChunkFormat:_urlParser.appName tcUrl:_urlParser.tcUrl];
     if([self write:[data bytes] length:(int)data.length]){
-        BOOL isHandSucc=YES;
-        LFRTMPReadBuffer *buffer=[LFRTMPReadBuffer new];
-        if([self read:buffer]){
-            [_rtmpChunkFormat parseResponsePacket:[buffer getBuffer]
-                                             size:buffer.size
-                                      sendCmdType:LFRtmpSendCommandConnect];
-        }else{
-            isHandSucc=NO;
-        }
-        return isHandSucc;
+        return YES;
     }else{
         return NO;
     }
 }
-
 /**
  *  释放流
  */
@@ -588,15 +914,6 @@
     if(data.length){
         if([self write:[data bytes] length:(int)data.length]){
             NSLog(@"--------------RTMP：发送sendReleaseStream成功！--------------");
-            LFRTMPReadBuffer *buffer=[LFRTMPReadBuffer new];
-            if([self read:buffer]){
-                NSLog(@"--------------RTMP：获取sendReleaseStream响应成功！--------------");
-                [_rtmpChunkFormat parseResponsePacket:[buffer getBuffer]
-                                                 size:buffer.size
-                                          sendCmdType:LFRtmpSendCommandReleaseStream];
-            }else{
-                NSLog(@"--------------RTMP：获取sendReleaseStream响应失败！--------------");
-            }
         }else{
             NSLog(@"--------------RTMP：发送sendReleaseStream失败！--------------");
         }
@@ -610,15 +927,6 @@
     if(data.length){
         if([self write:[data bytes] length:(int)data.length]){
             NSLog(@"--------------RTMP：发送FCPublish成功！--------------");
-            LFRTMPReadBuffer *buffer=[LFRTMPReadBuffer new];
-            if([self read:buffer]){
-                NSLog(@"--------------RTMP：获取FCPublish响应成功！--------------");
-                [_rtmpChunkFormat parseResponsePacket:[buffer getBuffer]
-                                                 size:buffer.size
-                                          sendCmdType:LFRtmpSendCommandFCPublish];
-            }else{
-                NSLog(@"--------------RTMP：获取FCPublish响应失败！--------------");
-            }
         }else{
             NSLog(@"--------------RTMP：发送FCPublish失败！--------------");
         }
@@ -632,15 +940,6 @@
     if(data.length){
         if([self write:[data bytes] length:(int)data.length]){
             NSLog(@"--------------RTMP：发送createStream成功！--------------");
-            LFRTMPReadBuffer *buffer=[LFRTMPReadBuffer new];
-            if([self read:buffer]){
-                NSLog(@"--------------RTMP：获取createStream响应成功！--------------");
-                [_rtmpChunkFormat parseResponsePacket:[buffer getBuffer]
-                                                 size:buffer.size
-                                          sendCmdType:LFRtmpSendCommandCreateStream];
-            }else{
-                NSLog(@"--------------RTMP：获取createStream响应失败！--------------");
-            }
         }else{
             NSLog(@"--------------RTMP：发送createStream失败！--------------");
         }
@@ -654,15 +953,6 @@
     if(data.length){
         if([self write:[data bytes] length:(int)data.length]){
             NSLog(@"--------------RTMP：发送_checkbw成功！--------------");
-            LFRTMPReadBuffer *buffer=[LFRTMPReadBuffer new];
-            if([self read:buffer]){
-                NSLog(@"--------------RTMP：获取_checkbw响应成功！--------------");
-                [_rtmpChunkFormat parseResponsePacket:[buffer getBuffer]
-                                                 size:buffer.size
-                                          sendCmdType:LFRtmpSendCommand_Checkbw];
-            }else{
-                NSLog(@"--------------RTMP：获取_checkbw响应失败！--------------");
-            }
         }else{
             NSLog(@"--------------RTMP：发送_checkbw失败！--------------");
         }
@@ -676,15 +966,6 @@
     if(data.length){
         if([self write:[data bytes] length:(int)data.length]){
             NSLog(@"--------------RTMP：发送deleteStream成功！--------------");
-            LFRTMPReadBuffer *buffer=[LFRTMPReadBuffer new];
-            if([self read:buffer]){
-                NSLog(@"--------------RTMP：获取deleteStream响应成功！--------------");
-                [_rtmpChunkFormat parseResponsePacket:[buffer getBuffer]
-                                                 size:buffer.size
-                                          sendCmdType:LFRtmpSendCommandDeleteStream];
-            }else{
-                NSLog(@"--------------RTMP：获取deleteStream响应失败！--------------");
-            }
         }else{
             NSLog(@"--------------RTMP：发送deleteStream失败！--------------");
         }
@@ -705,21 +986,6 @@
     if(data.length){
         if([self write:[data bytes] length:(int)data.length]){
             NSLog(@"--------------RTMP：发送publish成功！--------------");
-            LFRTMPReadBuffer *buffer=[LFRTMPReadBuffer new];
-            if([self read:buffer]){
-                NSLog(@"--------------RTMP：获取publish响应成功！--------------");
-                [_rtmpChunkFormat parseResponsePacket:[buffer getBuffer]
-                                                 size:buffer.size
-                                          sendCmdType:LFRtmpSendCommandPublishStream];
-            }else{
-                NSLog(@"--------------RTMP：获取publish响应失败！--------------");
-                dispatch_async(dispatch_get_main_queue(), ^{
-                    __strong __typeof(weakSelf)strongSelf = weakSelf;
-                    if(strongSelf.delegate&&[strongSelf.delegate respondsToSelector:@selector(onRtmpStatusChange:)]){
-                        [strongSelf.delegate onRtmpStatusChange:LFRTMPStatusPublishFail];
-                    }
-                });
-            }
         }else{
             NSLog(@"--------------RTMP：发送publish失败！--------------");
             dispatch_async(dispatch_get_main_queue(), ^{
@@ -740,15 +1006,6 @@
     if(data.length){
         if([self write:[data bytes] length:(int)data.length]){
             NSLog(@"--------------RTMP：发送fcUnPublish成功！--------------");
-            LFRTMPReadBuffer *buffer=[LFRTMPReadBuffer new];
-            if([self read:buffer]){
-                NSLog(@"--------------RTMP：获取fcUnPublish响应成功！--------------");
-                [_rtmpChunkFormat parseResponsePacket:[buffer getBuffer]
-                                                 size:buffer.size
-                                          sendCmdType:LFRtmpSendCommandFCUnPublishStream];
-            }else{
-                NSLog(@"--------------RTMP：获取fcUnPublish响应失败！--------------");
-            }
         }else{
             NSLog(@"--------------RTMP：发送fcUnPublish失败！--------------");
         }
@@ -794,94 +1051,6 @@
         [self writeMediaData];
     }
 }
-
-#pragma mark LFRtmpChunkFormatDelegate
-/**
- *  处理命令消息
- */
--(void)onHandleCommand:(LFRtmpResponseCommand *)command sendCmdType:(LFRtmpSendCommandType)sendCmdType{
-    switch (sendCmdType) {
-        case LFRtmpSendCommandConnect:
-        {
-            //处理connect的响应_result
-            if(command.commandType==LFRtmpResponseCommand_Result){
-                if(command.optionObject&&command.getOptionObjectDictionary){
-                    NSString *code=[command optionObjectValueForKey:@"code"];
-                    if([code isEqualToString:kLFRtmpConnectSuccess]){
-                        [self sendReleaseStream];
-                        [self sendFCPublish];
-                        [self sendCreateStream];
-                    }
-                }
-           //处理connect的响应onBWDone
-            }else if(command.commandType==LFRtmpResponseCommandOnBWDone){
-                [self sendCheckBindWidth];
-            }
-        }
-            break;
-       case LFRtmpSendCommand_Checkbw:
-        {
-            if(command.commandType==LFRtmpResponseCommand_Result){
-                [self sendPublishStream];
-            }
-        }
-            break;
-       case LFRtmpSendCommandCreateStream:
-        {
-            //处理createStream的响应_result
-            if(command.commandType==LFRtmpResponseCommand_Result){
-                if(command.optionObject&&[command.optionObject isKindOfClass:[NSNumber class]]){
-                    _streamID=[(NSNumber *)command.optionObject intValue];
-                }else{
-                    NSLog(@"--------------RTMP：解析createStream响应失败！未能获取streamID--------------");
-                    [self reStart];
-                }
-            }
-        }
-            break;
-        case LFRtmpSendCommandPublishStream:
-        {
-            if(command.commandType==LFRtmpResponseCommandOnStatus){
-                if(command.optionObject&&command.getOptionObjectDictionary){
-                    NSString *code=[command optionObjectValueForKey:@"code"];
-                    __weak __typeof(self)weakSelf = self;
-                    if([code isEqualToString:kLFRtmpPublishStart]){
-                        LFRTMPSERVICE_LOCK
-                        _isPublishReady=YES;
-                        LFRTMPSERVICE_UNLOCK
-                        NSLog(@"--------------RTMP：解析publish响应成功！推流准备就绪！！--------------");
-                        dispatch_async(dispatch_get_main_queue(), ^{
-                            __strong __typeof(weakSelf)strongSelf = weakSelf;
-                            if(strongSelf.delegate&&[strongSelf.delegate respondsToSelector:@selector(onRtmpStatusChange:)]){
-                                [strongSelf.delegate onRtmpStatusChange:LFRTMPStatusPublishReady];
-                            }
-                        });
-                    }else{
-                        NSLog(@"--------------RTMP：解析publish响应失败！--------------");
-                        LFRTMPSERVICE_LOCK
-                        _isPublishReady=NO;
-                        LFRTMPSERVICE_UNLOCK
-                        dispatch_async(dispatch_get_main_queue(), ^{
-                            __strong __typeof(weakSelf)strongSelf = weakSelf;
-                            if(strongSelf.delegate&&[strongSelf.delegate respondsToSelector:@selector(onRtmpStatusChange:)]){
-                                [strongSelf.delegate onRtmpStatusChange:LFRTMPStatusPublishFail];
-                            }
-                        });
-                    }
-                }else{
-                    NSLog(@"--------------RTMP：解析publish响应失败！--------------");
-                    LFRTMPSERVICE_LOCK
-                    _isPublishReady=NO;
-                    LFRTMPSERVICE_UNLOCK
-                }
-            }
-        }
-            break;
-        default:
-            break;
-    }
-}
-
 #pragma mark device
 /**
  *  配置设备
@@ -999,6 +1168,6 @@
     [[NSNotificationCenter defaultCenter] removeObserver:self
                                                     name:UIApplicationDidReceiveMemoryWarningNotification
                                                   object:nil];
-    
+
 }
 @end

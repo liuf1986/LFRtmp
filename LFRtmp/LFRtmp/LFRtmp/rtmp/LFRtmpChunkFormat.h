@@ -13,40 +13,21 @@
 #import <Foundation/Foundation.h>
 #import "LFRtmpChunkData.h"
 #import "LFRtmpBasicHeader.h"
-typedef enum : char {
-    LFRtmpSendCommandConnect=0x1,//connect命令
-    LFRtmpSendCommandReleaseStream=0x1,//releaseStream命令
-    LFRtmpSendCommandFCPublish=0x2,//FCPublish命令
-    LFRtmpSendCommandCreateStream=0x3,//createStream命令
-    LFRtmpSendCommand_Checkbw=0x4,//_checkbw命令
-    LFRtmpSendCommandDeleteStream=0x5,//deleteStream命令
-    LFRtmpSendCommandPublishStream=0x6,//publish命令
-    LFRtmpSendCommandFCUnPublishStream=0x7,//FCUnpublish命令
-    
-} LFRtmpSendCommandType;
-
-@protocol LFRtmpChunkFormatDelegate <NSObject>
-/**
- *  处理命令消息
- */
--(void)onHandleCommand:(LFRtmpResponseCommand *)command sendCmdType:(LFRtmpSendCommandType)sendCmdType;
-
-@end
 @interface LFRtmpChunkFormat : NSObject
 
-@property (assign,nonatomic) uint32_t chunkSize;
+@property (assign,nonatomic) uint32_t inChunkSize;//接收到的包大小
+@property (assign,nonatomic) uint32_t outChunkSize;//发送的包大小
 @property (assign,nonatomic) uint32_t abortChunkStreamID;
 @property (assign,nonatomic) uint32_t acknowledgementSeq;
 @property (assign,nonatomic) uint32_t windowAckSize;
 @property (assign,nonatomic) uint32_t bandWidth;
 @property (assign,nonatomic) LFRtmpBandWidthLimitType bandWidthLimiType;
 @property (assign,nonatomic) BOOL isStreamBegin;
-@property (weak,nonatomic) id<LFRtmpChunkFormatDelegate>delegate;
 /**
  *  用于RTMP连接的命令数据块
  *
- *  @param appName 例如有推流路径为rtmp://xxx/userlive/liuf，appName则为userlive
- *  @param tcUrl 例如有推流路径为rtmp://xxx/userlive/liuf，tcUrl则为rtmp://xxx/userlive
+ *  @param appName 例如有推流路径为rtmp://xx.com/userlive/liuf，appName则为userlive
+ *  @param tcUrl 例如有推流路径为rtmp://xx.com/userlive/liuf，tcUrl则为rtmp://xx.com/userlive
  *  @return NSData。
  */
 -(NSData *)connectChunkFormat:(NSString *)appName tcUrl:(NSString *)tcUrl;
@@ -100,15 +81,6 @@ typedef enum : char {
  *  @return NSData
  */
 -(NSData *)fcUnPublishStreamChunkFormat:(NSString *)streamName;
-/**
- *  处理发出连接请求后服务器的响应
- *
- *  @param packet 数据包
- *  @param size   包的有效位数
- *  @param sendCmdType 发送的命令类型
- *  @return 是否处理成功
- */
--(void)parseResponsePacket:(char *)packet size:(int)size sendCmdType:(LFRtmpSendCommandType)sendCmdType;
 /**
  *  FLV AAC音频同步包。 不论向 RTMP 服务器推送音频还是视频，都需要按照 FLV 的格式进行封包。因此，在我们向服务器推送第一个 AAC包之前，
  *  需要首先推送一个音频 Tag [AAC Sequence Header].

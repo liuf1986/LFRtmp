@@ -26,7 +26,7 @@ typedef int (^param_handler_t)(NSData *params);
 
 - (void)encodeWithBlock:(encoder_handler_t)block onParams:(param_handler_t)paramsHandler;
 - (void)encodeFrame:(CMSampleBufferRef)sampleBuffer;
-- (void)encodePixelBuffer:(CVPixelBufferRef)pixelBuffer pts:(CMTime)pts;
+//- (void)encodePixelBuffer:(CVPixelBufferRef)pixelBuffer pts:(CMTime)pts;
 - (NSData *)getConfigData;
 - (void)shutdown;
 

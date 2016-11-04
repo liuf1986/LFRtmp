@@ -21,7 +21,8 @@
     self=[super init];
     if(self){
         //默认设置为128b
-        _chunkSize=128;
+        _inChunkSize=128;
+        _outChunkSize=128;
         _semaphore=dispatch_semaphore_create(1);
         _firstTimestamp=0;
     }
@@ -30,8 +31,8 @@
 /**
  *  用于RTMP连接的命令数据块
  *
- *  @param appName 例如有推流路径为rtmp://xxx/userlive/liuf，appName则为userlive
- *  @param tcUrl 例如有推流路径为rtmp://xxx/userlive/liuf，tcUrl则为rtmp://xxx/userlive
+ *  @param appName 例如有推流路径为rtmp://xx.com/userlive/liuf，appName则为userlive
+ *  @param tcUrl 例如有推流路径为rtmp://xx.com/userlive/liuf，tcUrl则为rtmp://xx.com/userlive
  *  @return NSData。
  */
 -(NSData *)connectChunkFormat:(NSString *)appName tcUrl:(NSString *)tcUrl{
@@ -330,212 +331,6 @@
     return data;
 }
 /**
- *  处理发出连接请求后服务器的响应
- *
- *  @param packet 数据包
- *  @param size   包的有效位数
- *
- *  @return 是否处理成功
- */
--(void)parseResponsePacket:(char *)packet size:(int)size sendCmdType:(LFRtmpSendCommandType)sendCmdType{
-    int handleSize=0;
-    NSMutableArray *basicHeaders=[NSMutableArray new];
-    LFRtmpBasicHeader *preBasicHeader=nil;
-    while (YES) {
-        LFRtmpBasicHeader *basicHeader=[LFRtmpBasicHeader basicHeader:packet[handleSize++]];
-        if(!basicHeader){
-            break;
-        }else{
-            [basicHeaders addObject:basicHeader];
-            if(preBasicHeader==nil||preBasicHeader.chunkStreamID!=basicHeader.chunkStreamID){
-                preBasicHeader=basicHeader;
-            }
-            switch (basicHeader.fmtType) {
-                case LFRtmpBasicHeaderFmtLarge:
-                {
-                    NSMutableData *data=[NSMutableData data];
-                    [data setLength:LFRtmpMessageHeaderSizeLarge];
-                     uint8_t *bytes=[data mutableBytes];
-                    for(int i=handleSize;i<handleSize+LFRtmpMessageHeaderSizeLarge;i++){
-                        bytes[i-handleSize]=packet[i];
-                    }
-                    LFRtmpMessageHeader *msgHeader=[LFRtmpMessageHeader messageHeader:basicHeader.fmtType
-                                                                                 data:data];
-                    handleSize+=LFRtmpMessageHeaderSizeLarge;
-                    //启用扩展时间戳
-                    if(msgHeader.timestamp>=kMessageThreeByteMax){
-                        NSMutableData *data=[NSMutableData data];
-                        [data setLength:4];
-                        uint8_t *bytes=[data mutableBytes];
-                        for(int i=handleSize;i<handleSize+4;i++){
-                            bytes[i-handleSize]=packet[i];
-                        }
-                        LFRtmpExtendedTimestamp *extendedTimestamp=[LFRtmpExtendedTimestamp extendedTimestamp:data];
-                        msgHeader.extendTimestamp=extendedTimestamp;
-                        handleSize+=4;
-                    }
-                    basicHeader.messageHeader=msgHeader;
-                }
-                    break;
-                case LFRtmpBasicHeaderFmtMedium:
-                {
-                    NSMutableData *data=[NSMutableData data];
-                    [data setLength:LFRtmpMessageHeaderSizeMedium];
-                    uint8_t *bytes=[data mutableBytes];
-                    for(int i=handleSize;i<handleSize+LFRtmpMessageHeaderSizeMedium;i++){
-                        bytes[i-handleSize]=packet[i];
-                    }
-                    LFRtmpMessageHeader *msgHeader=[LFRtmpMessageHeader messageHeader:basicHeader.fmtType
-                                                                                 data:data];
-                    handleSize+=LFRtmpMessageHeaderSizeMedium;
-                    //启用扩展时间戳
-                    if(msgHeader.timestamp>=kMessageThreeByteMax){
-                        NSMutableData *data=[NSMutableData data];
-                        [data setLength:4];
-                        uint8_t *bytes=[data mutableBytes];
-                        for(int i=handleSize;i<handleSize+4;i++){
-                            bytes[i-handleSize]=packet[i];
-                        }
-                        LFRtmpExtendedTimestamp *extendedTimestamp=[LFRtmpExtendedTimestamp extendedTimestamp:data];
-                        msgHeader.extendTimestamp=extendedTimestamp;
-                        handleSize+=4;
-                    }
-                    //补齐缺失的信息
-                    if(preBasicHeader){
-                        msgHeader.streamID=preBasicHeader.messageHeader.streamID;
-                    }
-                    basicHeader.messageHeader=msgHeader;
-                }
-                    break;
-                case LFRtmpBasicHeaderFmtSmall:
-                {
-                    NSMutableData *data=[NSMutableData data];
-                    [data setLength:LFRtmpMessageHeaderSizeSmall];
-                    uint8_t *bytes=[data mutableBytes];
-                    for(int i=handleSize;i<handleSize+LFRtmpMessageHeaderSizeSmall;i++){
-                        bytes[i-handleSize]=packet[i];
-                    }
-                    LFRtmpMessageHeader *msgHeader=[LFRtmpMessageHeader messageHeader:basicHeader.fmtType
-                                                                                 data:data];
-                    handleSize+=LFRtmpMessageHeaderSizeSmall;
-                    if(msgHeader.timestamp>=kMessageThreeByteMax){
-                        NSMutableData *data=[NSMutableData data];
-                        [data setLength:4];
-                        uint8_t *bytes=[data mutableBytes];
-                        for(int i=handleSize;i<handleSize+4;i++){
-                            bytes[i-handleSize]=packet[i];
-                        }
-                        LFRtmpExtendedTimestamp *extendedTimestamp=[LFRtmpExtendedTimestamp extendedTimestamp:data];
-                        msgHeader.extendTimestamp=extendedTimestamp;
-                        handleSize+=4;
-                    }
-                    //补齐缺失的信息
-                    if(preBasicHeader){
-                        msgHeader.streamID=preBasicHeader.messageHeader.streamID;
-                        msgHeader.length=preBasicHeader.messageHeader.length;
-                        msgHeader.typeID=preBasicHeader.messageHeader.typeID;
-                    }
-                    basicHeader.messageHeader=msgHeader;
-                }
-                    break;
-                case LFRtmpBasicHeaderFmtMin:
-                {
-                    //和上一个块的message header完全一致
-                    if(preBasicHeader){
-                        basicHeader.messageHeader=preBasicHeader.messageHeader;
-                    }
-                }
-                    break;
-                default:
-                    break;
-            }
-            //读取chunk data数据
-            if(basicHeader.messageHeader.length>0){
-                NSMutableData *data=[NSMutableData data];
-                [data setLength:basicHeader.messageHeader.length];
-                uint8_t *bytes=[data mutableBytes];
-                //如果是命令消息则判断首字节是否是0x2,因为命令消息的前部都是以字符串表示命令名称
-                //而在AMF0中字符串类型是0x2
-                if(basicHeader.messageHeader.typeID==LFRtmpCommandMessage){
-                    uint8_t byte=packet[handleSize];
-                    if(byte!=0x2){
-                        NSLog(@"--------------RTMP：调用parseResponsePacket失败，命令消息的首字节必须为0x2！--------------");
-                        return;
-                    }
-                }
-                int hSize=handleSize;
-                for(int i=0,j=hSize;i<basicHeader.messageHeader.length;i++){
-                    //如果一个包的大小超过chunk size的大小（如果没有设置默认为128b）则128整倍数位上的数据不计入有效数据
-                    //这种数据称为包分隔符，包分隔符的规则为0xc0|chunk stream ID
-                    //例如如果是协议控制块流则chunk stream ID为0x2，包分隔符=0xc0|0x2=0xc2  
-                    uint8_t byte=packet[j++];
-                    if((j-1-hSize)!=0&&(j-1-hSize)%_chunkSize==0){
-                        i--;
-                        handleSize++;
-                    }else{
-                        bytes[i]=byte;
-                    }
-                }
-                LFRtmpChunkData *chunkData=[[LFRtmpChunkData alloc] init:data];
-                basicHeader.chunkData=chunkData;
-                handleSize+=basicHeader.messageHeader.length;
-            }
-        }
-        if(handleSize>=size){
-            break;
-        }
-    }
-    
-    if(basicHeaders.count){
-        [basicHeaders enumerateObjectsUsingBlock:^(LFRtmpBasicHeader *basicHeader,
-                                                   NSUInteger idx,
-                                                   BOOL * stop) {
-            switch (basicHeader.messageHeader.typeID) {
-                case LFRtmpProControlSetChunkSizeMessage:
-                {
-                    self.chunkSize=[basicHeader.chunkData parseSetChunkSize];
-                }
-                    break;
-                case LFRtmpProControlAbortMessage:
-                {
-                    self.abortChunkStreamID=[basicHeader.chunkData parseAbortMessage];
-                }
-                    break;
-                case LFRtmpProControlAckMessage:
-                {
-                    self.acknowledgementSeq=[basicHeader.chunkData parseAcknowledgement];
-                }
-                    break;
-                case LFRtmpProControlWindowAckSizeMessage:
-                {
-                    self.windowAckSize=[basicHeader.chunkData parseWindowAckSize];
-                }
-                    break;
-                case LFRtmpProControlSetPeerBandWidthMessage:
-                {
-                    NSDictionary *dic=[basicHeader.chunkData parseBandWidth];
-                    self.bandWidth=[[dic valueForKey:kBandWidthSize] intValue];
-                    self.bandWidthLimiType=[[dic valueForKey:kBandWidthLimitType] charValue];
-                }
-                    break;
-                case LFRtmpUserControlMessage:
-                {
-                    self.isStreamBegin=[basicHeader.chunkData parseUserCtrlStreamBegin];
-                }
-                    break;
-                case LFRtmpCommandMessage:
-                {
-                    [self handleCommand:[basicHeader.chunkData parseCommand] sendCmdType:sendCmdType];
-                }
-                    break;
-                default:
-                    break;
-            }
-        }];
-    }
-}
-
-/**
  如果一个包的大小超过chunk size的大小（如果没有设置默认为128b）则128整倍数位上的数据不计入有效数据
  这种数据称为包分隔符，包分隔符的规则为0xc0|chunk stream ID
  例如如果是音视频块流则chunk stream ID为0x4，包分隔符=0xc0|0x2=0xc4
@@ -546,17 +341,6 @@
  */
 +(uint8_t)chunkPacketSplitChar:(LFRtmpBasicHeaderChunkStreamID)chunkStreamID{
     return 0xc0|chunkStreamID;
-}
-/**
- *  处理命令消息
- *
- *  @param command LFRtmpCommand
- */
--(void)handleCommand:(LFRtmpResponseCommand *)command sendCmdType:(LFRtmpSendCommandType)sendCmdType{
-    
-    if(self.delegate&&[self.delegate respondsToSelector:@selector(onHandleCommand:sendCmdType:)]){
-        [self.delegate onHandleCommand:command sendCmdType:sendCmdType];
-    }
 }
 
 /**

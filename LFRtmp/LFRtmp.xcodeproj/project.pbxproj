@@ -1655,8 +1655,8 @@
 				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/Frameworks";
 				PRODUCT_BUNDLE_IDENTIFIER = liufang.LFRtmp;
 				PRODUCT_NAME = "$(TARGET_NAME)";
-				PROVISIONING_PROFILE = "db08ade3-4994-4989-acfe-b56dfb910f8f";
-				PROVISIONING_PROFILE_SPECIFIER = Wildcard_918;
+				PROVISIONING_PROFILE = "d5c39b11-c25b-452d-9eec-656927d1f296";
+				PROVISIONING_PROFILE_SPECIFIER = development_wildcard;
 			};
 			name = Debug;
 		};
@@ -1669,8 +1669,8 @@
 				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/Frameworks";
 				PRODUCT_BUNDLE_IDENTIFIER = liufang.LFRtmp;
 				PRODUCT_NAME = "$(TARGET_NAME)";
-				PROVISIONING_PROFILE = "db08ade3-4994-4989-acfe-b56dfb910f8f";
-				PROVISIONING_PROFILE_SPECIFIER = Wildcard_918;
+				PROVISIONING_PROFILE = "d5c39b11-c25b-452d-9eec-656927d1f296";
+				PROVISIONING_PROFILE_SPECIFIER = development_wildcard;
 			};
 			name = Release;
 		};

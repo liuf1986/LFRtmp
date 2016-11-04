@@ -19,15 +19,15 @@
 //滤镜常量
 typedef enum : char {
     //美颜滤镜
-    LFMicDeviceFilter_Beautiful=1,
+    LFCameraDeviceFilter_Beautiful=1,
     //原始
-    LFMicDeviceFilter_Original=2,
+    LFCameraDeviceFilter_Original=2,
     //拉伸
-    LFMicDeviceFilter_Stretch=3,
+    LFCameraDeviceFilter_Stretch=3,
     //挤压
-    LFMicDeviceFilter_Pinch=4,
+    LFCameraDeviceFilter_Pinch=4,
     //管道
-    LFMicDeviceFilter_Vignette=5
+    LFCameraDeviceFilter_Vignette=5
 
     
 } LFCameraDeviceFilter;
@@ -58,6 +58,10 @@ typedef enum : char {
  */
 @property (assign,nonatomic) BOOL isOpenFlash;
 /**
+ *  是否启用面部识别功能
+ */
+@property (assign,nonatomic) BOOL isEnableFace;
+/**
  *  mirror
  */
 @property (assign,nonatomic) BOOL mirror;
@@ -69,6 +73,11 @@ typedef enum : char {
  *  水印
  */
 @property (strong,nonatomic) UIView *logoView;
+
+/**
+ *  贴纸
+ */
+@property (strong,nonatomic) UIView *faceView;
 /**
  *  初始化
  *

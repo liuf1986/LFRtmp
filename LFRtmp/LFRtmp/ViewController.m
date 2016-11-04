@@ -48,7 +48,8 @@
     if(!_isStarted){
         [self addLogo];
         [_palyButton setImage:[UIImage imageNamed:@"capture_stop_button"] forState:(UIControlStateNormal)];
-        [rtmpService start:@"rtmp://xxx/xx/xx" port:1935];
+        //[rtmpService start:@"rtmp://xxx/xx/xx" port:1935];
+        [rtmpService start:@"rtmp://139.224.53.118/liuf/test" port:1935];
     }else{
         [_palyButton setImage:[UIImage imageNamed:@"capture_button"] forState:(UIControlStateNormal)];
         _statusLabel.text=@"未连接";
