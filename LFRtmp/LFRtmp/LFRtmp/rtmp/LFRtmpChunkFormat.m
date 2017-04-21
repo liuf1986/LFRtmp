@@ -3,7 +3,7 @@
 //  myrtmp
 //
 //  Created by liuf on 16/7/22.
-// 
+//
 //
 
 #import "LFRtmpChunkFormat.h"
@@ -222,6 +222,35 @@
     LFRtmpMessageHeader *msgHeader=[[LFRtmpMessageHeader alloc] init:LFRtmpBasicHeaderFmtMedium
                                                               typeID:LFRtmpCommandMessage
                                                             streamID:0x0
+                                                              length:(uint32_t)chunkData.length
+                                                           timestamp:0x0];
+    [data appendData:[msgHeader data]];
+    if(msgHeader.extendTimestamp){
+        [data appendData:[msgHeader.extendTimestamp data]];
+    }
+    [data appendData:chunkData];
+    return data;
+}
+/**
+ *  用于拼装RTMP setDataFrame命令的AMF0数据结构,用于设置元数据metadata，音视频参数
+ *
+ *  @param streamName 流名
+ *  @param videoConfig 视频信息
+ *  @param audioConfig 音频信息
+ *  @return NSData
+ */
+-(NSData *)setDataFrameChunkFormat:(NSString *)streamName
+                       videoConfig:(LFVideoConfig *)videoConfig
+                       audioConfig:(LFAudioConfig *)audioConfig{
+    NSMutableData *data=[[NSMutableData alloc] init];
+    LFRtmpBasicHeader *basicHeader=[[LFRtmpBasicHeader alloc] init:LFRtmpBasicHeaderFmtLarge
+                                                     chunkStreamID:LFRtmpBasicHeaderMediaStreamID
+                                                         byteCount:LFRtmpBasicHeaderByteCount1];
+    [data appendData:[basicHeader data]];
+    NSData *chunkData=[LFRtmpChunkData setDataFrameData:streamName videoConfig:videoConfig audioConfig:audioConfig];
+    LFRtmpMessageHeader *msgHeader=[[LFRtmpMessageHeader alloc] init:LFRtmpBasicHeaderFmtLarge
+                                                              typeID:LFRtmpDataMessage
+                                                            streamID:0x1
                                                               length:(uint32_t)chunkData.length
                                                            timestamp:0x0];
     [data appendData:[msgHeader data]];

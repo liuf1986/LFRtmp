@@ -3,7 +3,7 @@
 //  myrtmp
 //
 //  Created by liuf on 16/7/22.
-// 
+//
 //
 
 #import "LFRtmpChunkData.h"
@@ -368,6 +368,48 @@ static int sendTransactionID=1;
     [archiver encodeUnsignedChar:kAMF0NullType];
     [archiver encodeObject:streamName];
     sendTransactionID=1;
+    return [archiver data];
+}
+/**
+ *  用于拼装RTMP setDataFrame命令的AMF0数据结构,用于设置元数据metadata，音视频参数
+ *
+ *  @param streamName 流名
+ *  @param videoConfig 视频信息
+ *  @param audioConfig 音频信息
+ *  @return NSData
+ */
++(NSData *)setDataFrameData:(NSString *)streamName
+                videoConfig:(LFVideoConfig *)videoConfig
+                audioConfig:(LFAudioConfig *)audioConfig{
+    /**
+     * setDataFrame命令结构
+     | Field Name | Type | Description |
+     |命令名称 | String | 命令的名称. 设置成 "@setDataFrame"
+     |设置元数据 | String | 设置成 "onMetaData"
+     |数组 |array| 具体音视频参数 |
+     */
+    AMFArchiver *archiver=[[AMFArchiver alloc] initForWritingWithMutableData:[NSMutableData data]
+                                                                    encoding:kAMF0Encoding];
+    [archiver encodeObject:@"@setDataFrame"];
+    [archiver encodeObject:@"onMetaData"];
+    NSMutableArray *array=[NSMutableArray new];
+    [array addObject:@{@"width":[NSNumber numberWithInt:videoConfig.videoSize.width]}];
+    [array addObject:@{@"height":[NSNumber numberWithInt:videoConfig.videoSize.height]}];
+    [array addObject:@{@"videodatarate":[NSNumber numberWithInt:videoConfig.bitRate]}];
+    [array addObject:@{@"framerate":[NSNumber numberWithInt:videoConfig.frameRate]}];
+    //编码格式7代表h264
+    [array addObject:@{@"videocodecid":[NSNumber numberWithInt:7]}];
+    [array addObject:@{@"audiodatarate":[NSNumber numberWithInt:audioConfig.bitRate]}];
+    [array addObject:@{@"audiosamplerate":[NSNumber numberWithInt:audioConfig.sampleRate]}];
+    [array addObject:@{@"audiosamplesize":[NSNumber numberWithInt:audioConfig.bitDepth]}];
+    if(audioConfig.channel==LFAudioConfigChannelStereo){
+        [array addObject:@{@"stereo":[NSNumber numberWithBool:YES]}];
+    }else{
+        [array addObject:@{@"stereo":[NSNumber numberWithBool:NO]}];
+    }
+    //10代表aac
+    [array addObject:@{@"audiocodecid":[NSNumber numberWithInt:10]}];
+    [archiver encodeObject:array];
     return [archiver data];
 }
 /**

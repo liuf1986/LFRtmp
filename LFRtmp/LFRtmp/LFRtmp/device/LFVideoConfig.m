@@ -50,7 +50,7 @@
             _minFrameRate=10;
             _bitRate=500*1000;
             _maxBitRate=600*1000;
-            _minFrameRate=400*1000;
+            _minBitRate=400*1000;
             _resolution=LFVideoConfigResolution360_640;
             if(_isLandscape){
                 _videoSize=CGSizeMake(640, 360);
@@ -66,7 +66,7 @@
             _minFrameRate=12;
             _bitRate=600*1000;
             _maxBitRate=720*1000;
-            _minFrameRate=500*1000;
+            _minBitRate=500*1000;
             _resolution=LFVideoConfigResolution360_640;
             if(_isLandscape){
                 _videoSize=CGSizeMake(640, 360);
@@ -82,7 +82,7 @@
             _minFrameRate=15;
             _bitRate=800*1000;
             _maxBitRate=960*1000;
-            _minFrameRate=600*1000;
+            _minBitRate=600*1000;
             _resolution=LFVideoConfigResolution360_640;
             if(_isLandscape){
                 _videoSize=CGSizeMake(640, 360);
@@ -98,7 +98,7 @@
             _minFrameRate=10;
             _bitRate=800*1000;
             _maxBitRate=960*1000;
-            _minFrameRate=500*1000;
+            _minBitRate=500*1000;
             _resolution=LFVideoConfigResolution540_960;
             if(_isLandscape){
                 _videoSize=CGSizeMake(960, 540);
@@ -114,7 +114,7 @@
             _minFrameRate=12;
             _bitRate=800*1000;
             _maxBitRate=960*1000;
-            _minFrameRate=500*1000;
+            _minBitRate=500*1000;
             _resolution=LFVideoConfigResolution540_960;
             if(_isLandscape){
                 _videoSize=CGSizeMake(960, 540);
@@ -130,7 +130,7 @@
             _minFrameRate=15;
             _bitRate=1000*1000;
             _maxBitRate=1200*1000;
-            _minFrameRate=500*1000;
+            _minBitRate=500*1000;
             _resolution=LFVideoConfigResolution540_960;
             if(_isLandscape){
                 _videoSize=CGSizeMake(960, 540);
@@ -146,7 +146,7 @@
             _minFrameRate=10;
             _bitRate=1000*1000;
             _maxBitRate=1200*1000;
-            _minFrameRate=500*1000;
+            _minBitRate=500*1000;
             _resolution=LFVideoConfigResolution720_1280;
             if(_isLandscape){
                 _videoSize=CGSizeMake(1280,720);
@@ -162,7 +162,7 @@
             _minFrameRate=12;
             _bitRate=1000*1000;
             _maxBitRate=1440*1000;
-            _minFrameRate=800*1000;
+            _minBitRate=800*1000;
             _resolution=LFVideoConfigResolution720_1280;
             if(_isLandscape){
                 _videoSize=CGSizeMake(1280,720);
@@ -178,7 +178,7 @@
             _minFrameRate=15;
             _bitRate=1200*1000;
             _maxBitRate=1440*1000;
-            _minFrameRate=500*1000;
+            _minBitRate=500*1000;
             _resolution=LFVideoConfigResolution720_1280;
             if(_isLandscape){
                 _videoSize=CGSizeMake(1280,720);

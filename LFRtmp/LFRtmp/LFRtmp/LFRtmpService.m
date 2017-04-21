@@ -3,7 +3,7 @@
 //  myrtmp
 //
 //  Created by liuf on 16/7/15.
-// 
+//
 //
 #define RTMP_RCVTIMEO 10
 #define RTMP_SENDTIMEO 10
@@ -269,7 +269,7 @@
         [self closeRtmp];
     }else{
         if([self handShake]){
-             NSLog(@"--------------RTMP：握手成功！--------------");
+            NSLog(@"--------------RTMP：握手成功！--------------");
             if([self sendConnPacket]){
                 isConnect=YES;
             }
@@ -301,7 +301,7 @@
     if (gai_error){
         NSLog(@"--------------RTMP：获取socket地址失败！--------------");
         _isSocketConnect=NO;
-       return _isSocketConnect;
+        return _isSocketConnect;
     }
     else{
         NSUInteger capacity = 0;
@@ -393,7 +393,7 @@
             c0c1[i]=rand();
         }
     }
-    if([self write:c0c1 length:sizeof(c0c1)]){
+    if([self write:c0c1 length:sizeof(c0c1) isPacket:NO]){
         //读取S0S1S2
         LFRTMPReadBuffer *s0s1s2=[LFRTMPReadBuffer new];
         s0s1s2.expectedSize=1;
@@ -422,7 +422,7 @@
                                 //获取S1
                                 bytes=[s1 mutableBytes];
                                 //发送C2，C2的数据可和S1保持一致
-                                if([self write:bytes length:(int)s1.length]){
+                                if([self write:bytes length:(int)s1.length isPacket:NO]){
                                     isHandSucc=YES;
                                 }
                             }
@@ -442,27 +442,121 @@
  *
  *  @return 是否写成功
  */
--(BOOL)write:(const void *)buffer length:(int)n{
-    BOOL isWriteSucc=YES;
-    const char *pBuffer=buffer;
-    while (n>0) {
-        ssize_t bytes=send(_socket, pBuffer, n, 0);
-        if(bytes<0){
-            //如果是被系统呼叫中断如有电话进来则继续发送
-            if(errno==EINTR){
-                continue;
+-(BOOL)write:(char *)dataBytes length:(int)length isPacket:(BOOL)isPacket{
+    
+    if(isPacket){
+        //通过首字节获取header基本信息
+        LFRtmpBasicHeader *basicHeader=[LFRtmpBasicHeader basicHeader:dataBytes[0]];
+        int rtmpHeaderLength=-1;
+        switch (basicHeader.fmtType) {
+            case LFRtmpBasicHeaderFmtLarge:
+            {
+                rtmpHeaderLength=12;
+            }
+                break;
+            case LFRtmpBasicHeaderFmtMedium:
+            {
+                rtmpHeaderLength=8;
+            }
+                break;
+            case LFRtmpBasicHeaderFmtSmall:
+            {
+                rtmpHeaderLength=4;
+            }
+                break;
+            default:
+                break;
+        }
+        if(rtmpHeaderLength==-1){
+            NSLog(@"--------------RTMP：待发送数据头错误！--------------");
+            return NO;
+        }
+        //有扩展时间戳，则数据头中包含四字节的扩展数据
+        if(dataBytes[1]==0x1&&dataBytes[2]==0x1&&dataBytes[3]==0x1){
+            rtmpHeaderLength+=4;
+        }
+        BOOL isWriteSucc=YES;
+        int chunkSize=_rtmpChunkFormat.outChunkSize;
+        int count=ceil((length-rtmpHeaderLength)/(chunkSize+0.0));
+        //拆分数据将大数据拆分为小的chunk块
+        for(int i=0;i<count;i++){
+            NSMutableData *chunkData=[NSMutableData data];
+            if(i==count-1){
+                [chunkData setLength:(length-rtmpHeaderLength-i*chunkSize)];
+                uint8_t *buffer=[chunkData mutableBytes];
+                for(int j=0;j<(length-rtmpHeaderLength-i*chunkSize);j++){
+                    buffer[j]=dataBytes[i*chunkSize+j+rtmpHeaderLength];
+                }
             }else{
-                isWriteSucc=NO;
+                [chunkData setLength:chunkSize];
+                uint8_t *buffer=[chunkData mutableBytes];
+                for(int j=0;j<chunkSize;j++){
+                    buffer[j]=dataBytes[i*chunkSize+j+rtmpHeaderLength];
+                }
+            }
+            NSMutableData *sendPacketData=[NSMutableData new];
+            if(i==0){
+                [sendPacketData setLength:rtmpHeaderLength];
+                uint8_t *packetBytes=[sendPacketData mutableBytes];
+                //设置头数据
+                for(int k=0;k<rtmpHeaderLength;k++){
+                    packetBytes[k]=dataBytes[k];
+                }
+                //追加chunk数据
+                [sendPacketData appendData:chunkData];
+            }else{
+                [sendPacketData setLength:1];
+                uint8_t *packetBytes=[sendPacketData mutableBytes];
+                //加包分隔符，如果在发送大于chunk size的包时如果没有加分隔符或者分隔符不正确
+                //则会被服务器将socket的状态设置为EPIPE Broken pipe，导致频繁重连
+                packetBytes[0]=[LFRtmpChunkFormat chunkPacketSplitChar:basicHeader.chunkStreamID];
+                //追加chunk数据
+                [sendPacketData appendData:chunkData];
+            }
+            NSUInteger n=sendPacketData.length;
+            while (n>0) {
+                ssize_t bytes=send(_socket, [sendPacketData mutableBytes], n, 0);
+                if(bytes<0){
+                    //如果是被系统呼叫中断如有电话进来则继续发送
+                    if(errno==EINTR){
+                        continue;
+                    }else{
+                        isWriteSucc=NO;
+                        break;
+                    }
+                }else if(bytes==0){
+                    break;
+                }else{
+                    n-=bytes;
+                }
+            }
+            if(!isWriteSucc){
                 break;
             }
-        }else if(bytes==0){
-            break;
-        }else{
-            n-=bytes;
-            pBuffer+=bytes;
         }
+        return isWriteSucc;
+        
+    }else{
+        BOOL isWriteSucc=YES;
+        while (length>0) {
+            ssize_t bytes=send(_socket, dataBytes, length, 0);
+            if(bytes<0){
+                //如果是被系统呼叫中断如有电话进来则继续发送
+                if(errno==EINTR){
+                    continue;
+                }else{
+                    isWriteSucc=NO;
+                    break;
+                }
+            }else if(bytes==0){
+                break;
+            }else{
+                length-=bytes;
+                dataBytes+=bytes;
+            }
+        }
+        return isWriteSucc;
     }
-    return isWriteSucc;
 }
 /**
  *  写音视频数据
@@ -489,12 +583,12 @@
                 break;
             case LFRtmpBasicHeaderFmtMedium:
             {
-                 rtmpHeaderLength=8;
+                rtmpHeaderLength=8;
             }
                 break;
             case LFRtmpBasicHeaderFmtSmall:
             {
-                  rtmpHeaderLength=4;
+                rtmpHeaderLength=4;
             }
                 break;
             default:
@@ -755,7 +849,7 @@
                                         uint8_t byte=chunkBytes[0];
                                         if(byte!=0x2){
                                             NSLog(@"--------------RTMP：调用listenSocketRecv失败，命令消息的首字节必须为0x2！--------------");
-                                           isParseSuccess=NO;
+                                            isParseSuccess=NO;
                                         }
                                     }
                                     if(chunk.length<=_rtmpChunkFormat.inChunkSize){
@@ -863,6 +957,7 @@
                     NSString *code=[command optionObjectValueForKey:@"code"];
                     __weak __typeof(self)weakSelf = self;
                     if([code isEqualToString:kLFRtmpPublishStart]){
+                        [self sendSetDataFrame];
                         LFRTMPSERVICE_LOCK
                         _isPublishReady=YES;
                         LFRTMPSERVICE_UNLOCK
@@ -900,7 +995,7 @@
  */
 -(BOOL)sendConnPacket{
     NSData *data=[_rtmpChunkFormat connectChunkFormat:_urlParser.appName tcUrl:_urlParser.tcUrl];
-    if([self write:[data bytes] length:(int)data.length]){
+    if([self write:(char *)[data bytes] length:(int)data.length isPacket:YES]){
         return YES;
     }else{
         return NO;
@@ -912,7 +1007,7 @@
 -(void)sendReleaseStream{
     NSData *data=[_rtmpChunkFormat releaseStreamChunkFormat:_urlParser.streamName];
     if(data.length){
-        if([self write:[data bytes] length:(int)data.length]){
+        if([self write:(char *)[data bytes] length:(int)data.length isPacket:YES]){
             NSLog(@"--------------RTMP：发送sendReleaseStream成功！--------------");
         }else{
             NSLog(@"--------------RTMP：发送sendReleaseStream失败！--------------");
@@ -925,7 +1020,7 @@
 -(void)sendFCPublish{
     NSData *data=[_rtmpChunkFormat fcPublishStreamChunkFormat:_urlParser.streamName];
     if(data.length){
-        if([self write:[data bytes] length:(int)data.length]){
+        if([self write:(char *)[data bytes] length:(int)data.length isPacket:YES]){
             NSLog(@"--------------RTMP：发送FCPublish成功！--------------");
         }else{
             NSLog(@"--------------RTMP：发送FCPublish失败！--------------");
@@ -938,7 +1033,7 @@
 -(void)sendCreateStream{
     NSData *data=[_rtmpChunkFormat createStreamChunkForamt];
     if(data.length){
-        if([self write:[data bytes] length:(int)data.length]){
+        if([self write:(char *)[data bytes] length:(int)data.length isPacket:YES]){
             NSLog(@"--------------RTMP：发送createStream成功！--------------");
         }else{
             NSLog(@"--------------RTMP：发送createStream失败！--------------");
@@ -951,7 +1046,7 @@
 -(void)sendCheckBindWidth{
     NSData *data=[_rtmpChunkFormat checkbwChunkForamt];
     if(data.length){
-        if([self write:[data bytes] length:(int)data.length]){
+        if([self write:(char *)[data bytes] length:(int)data.length isPacket:YES]){
             NSLog(@"--------------RTMP：发送_checkbw成功！--------------");
         }else{
             NSLog(@"--------------RTMP：发送_checkbw失败！--------------");
@@ -964,7 +1059,7 @@
 -(void)sendDeleteStream{
     NSData *data=[_rtmpChunkFormat deleteStreamForamt:_streamID];
     if(data.length){
-        if([self write:[data bytes] length:(int)data.length]){
+        if([self write:(char *)[data bytes] length:(int)data.length isPacket:YES]){
             NSLog(@"--------------RTMP：发送deleteStream成功！--------------");
         }else{
             NSLog(@"--------------RTMP：发送deleteStream失败！--------------");
@@ -984,7 +1079,7 @@
     });
     NSData *data=[_rtmpChunkFormat publishStreamChunkFormat:_urlParser.streamName];
     if(data.length){
-        if([self write:[data bytes] length:(int)data.length]){
+        if([self write:(char *)[data bytes] length:(int)data.length isPacket:YES]){
             NSLog(@"--------------RTMP：发送publish成功！--------------");
         }else{
             NSLog(@"--------------RTMP：发送publish失败！--------------");
@@ -998,13 +1093,28 @@
     }
 }
 /**
+ *  发送元数据
+ */
+-(void)sendSetDataFrame{
+    NSData *data=[_rtmpChunkFormat setDataFrameChunkFormat:_urlParser.streamName
+                                               videoConfig:_videoConfig
+                                               audioConfig:_audioConfig];
+    if(data.length){
+        if([self write:(char *)[data bytes] length:(int)data.length isPacket:YES]){
+            NSLog(@"--------------RTMP：发送元数据metadata成功！--------------");
+        }else{
+            NSLog(@"--------------RTMP：发送元数据metadata失败！--------------");
+        }
+    }
+}
+/**
  *  fcUnPublish
  */
 -(void)sendFcUnPublish{
     
     NSData *data=[_rtmpChunkFormat fcUnPublishStreamChunkFormat:_urlParser.streamName];
     if(data.length){
-        if([self write:[data bytes] length:(int)data.length]){
+        if([self write:(char *)[data bytes] length:(int)data.length isPacket:YES]){
             NSLog(@"--------------RTMP：发送fcUnPublish成功！--------------");
         }else{
             NSLog(@"--------------RTMP：发送fcUnPublish失败！--------------");
@@ -1070,6 +1180,28 @@
     }
     _cameraDevice=[[LFCameraDevice alloc] init:_videoConfig];
     _cameraDevice.orientation=(_orientation==UIInterfaceOrientationUnknown?UIInterfaceOrientationPortrait:_orientation);
+    if(_faceView){
+        [_cameraDevice setFaceView:_faceView];
+    }
+    if(_logoView){
+        [_cameraDevice setLogoView:_logoView];
+    }
+    if(_filterType){
+        [_cameraDevice setFilterType:_filterType];
+    }
+    if(_zoomScale){
+        [_cameraDevice setZoomScale:_zoomScale];
+    }
+    if(_isEnableFace){
+        [_cameraDevice setIsEnableFace:_isEnableFace];
+    }
+    if(_devicePosition){
+        [_cameraDevice setDevicePosition:_devicePosition];
+    }
+    if(_isOpenFlash){
+        [_cameraDevice setIsOpenFlash:_isOpenFlash];
+    }
+    
     [_cameraDevice setPreview:_preview];
     _cameraDevice.delegate=self;
     //配置视频编码器
@@ -1168,6 +1300,6 @@
     [[NSNotificationCenter defaultCenter] removeObserver:self
                                                     name:UIApplicationDidReceiveMemoryWarningNotification
                                                   object:nil];
-
+    
 }
 @end

@@ -3,7 +3,7 @@
 //  myrtmp
 //
 //  Created by liuf on 16/7/22.
-// 
+//
 //
 #define kBandWidthSize @"bandWidthSize"
 #define kBandWidthLimitType @"bandWidthLimitType"
@@ -11,6 +11,8 @@
 #import "LFRtmpMessageHeader.h"
 #import "LFRtmpResponseCommand.h"
 #import "LFVideoEncodeInfo.h"
+#import "LFVideoConfig.h"
+#import "LFAudioConfig.h"
 typedef enum : char {
     LFRtmpBandWidthLimitHard=0x0,//0-Hard(硬):对端应该(SHOULD)用指定的窗口大小限制自己的输出带宽。
     LFRtmpBandWidthLimitSoft=0x1,//1-Soft(软):对端应该(SHOULD)使用指定的窗口大小限制自己的输出带宽,如果已经 限制了的则取二者中小值。
@@ -131,6 +133,18 @@ typedef enum : char {
  *  @return NSData
  */
 +(NSData *)fcunPublishData:(NSString *)streamName;
+
+/**
+ *  用于拼装RTMP setDataFrame命令的AMF0数据结构,用于设置元数据metadata，音视频参数
+ *
+ *  @param streamName 流名
+ *  @param videoConfig 视频信息
+ *  @param audioConfig 音频信息
+ *  @return NSData
+ */
++(NSData *)setDataFrameData:(NSString *)streamName
+                videoConfig:(LFVideoConfig *)videoConfig
+                audioConfig:(LFAudioConfig *)audioConfig;
 /**
  *  FLV AAC音频同步包。 不论向 RTMP 服务器推送音频还是视频，都需要按照 FLV 的格式进行封包。因此，在我们向服务器推送第一个 AAC包之前，
  *  需要首先推送一个音频 Tag [AAC Sequence Header].

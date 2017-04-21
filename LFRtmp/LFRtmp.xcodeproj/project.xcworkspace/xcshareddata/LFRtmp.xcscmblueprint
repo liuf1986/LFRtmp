@@ -1,0 +1,25 @@
+{
+  "DVTSourceControlWorkspaceBlueprintPrimaryRemoteRepositoryKey" : "351e5307-0a02-4c7d-8452-6e77f89c443f",
+  "DVTSourceControlWorkspaceBlueprintWorkingCopyRepositoryLocationsKey" : {
+    "351e5307-0a02-4c7d-8452-6e77f89c443f" : {
+
+    }
+  },
+  "DVTSourceControlWorkspaceBlueprintWorkingCopyStatesKey" : {
+    "351e5307-0a02-4c7d-8452-6e77f89c443f" : 9223372036854775807
+  },
+  "DVTSourceControlWorkspaceBlueprintIdentifierKey" : "BD67DB79-B505-4A2A-83BB-1D19BBDDA187",
+  "DVTSourceControlWorkspaceBlueprintWorkingCopyPathsKey" : {
+    "351e5307-0a02-4c7d-8452-6e77f89c443f" : "IOSTechnology\/"
+  },
+  "DVTSourceControlWorkspaceBlueprintNameKey" : "LFRtmp",
+  "DVTSourceControlWorkspaceBlueprintVersion" : 204,
+  "DVTSourceControlWorkspaceBlueprintRelativePathToProjectKey" : "rtmp\/LFRtmp\/LFRtmp.xcodeproj",
+  "DVTSourceControlWorkspaceBlueprintRemoteRepositoriesKey" : [
+    {
+      "DVTSourceControlWorkspaceBlueprintRemoteRepositoryURLKey" : "svn:\/\/10.101.0.16:1023\/IOSTechnology",
+      "DVTSourceControlWorkspaceBlueprintRemoteRepositorySystemKey" : "com.apple.dt.Xcode.sourcecontrol.Subversion",
+      "DVTSourceControlWorkspaceBlueprintRemoteRepositoryIdentifierKey" : "351e5307-0a02-4c7d-8452-6e77f89c443f"
+    }
+  ]
+}
