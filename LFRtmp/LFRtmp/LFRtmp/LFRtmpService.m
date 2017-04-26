@@ -573,9 +573,10 @@
         NSMutableData *data=[_mediaSendBuffers firstObject];
         LFRTMPSERVICE_UNLOCK
         uint8_t *dataBytes=[data mutableBytes];
-        uint8_t fmtType=dataBytes[0]>>6;
+        //通过首字节获取header基本信息
+        LFRtmpBasicHeader *basicHeader=[LFRtmpBasicHeader basicHeader:dataBytes[0]];
         int rtmpHeaderLength=-1;
-        switch (fmtType) {
+        switch (basicHeader.fmtType) {
             case LFRtmpBasicHeaderFmtLarge:
             {
                 rtmpHeaderLength=12;
