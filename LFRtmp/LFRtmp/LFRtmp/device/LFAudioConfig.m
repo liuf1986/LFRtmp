@@ -3,11 +3,11 @@
 //  myrtmp
 //
 //  Created by liuf on 16/8/4.
-// 
+//
 //
 
 #import "LFAudioConfig.h"
-#import <sys/utsname.h>
+#import "DevicePlatform.h"
 @implementation LFAudioConfig
 /**
  *  通过默认配置实例化
@@ -62,7 +62,11 @@
         default:
             break;
     }
-    _sampleRate=LFAudioConfigSampleRate_44k;
+    if([DevicePlatform isIphone6sHLevel]){
+        _sampleRate=LFAudioConfigSampleRate_48k;
+    }else{
+        _sampleRate=LFAudioConfigSampleRate_44k;
+    }
     _bitDepth=16;//16位
     _channel=LFAudioConfigChannelStereo;
 }

@@ -637,7 +637,7 @@
                 uint8_t *packetBytes=[sendPacketData mutableBytes];
                 //加包分隔符，如果在发送大于chunk size的包时如果没有加分隔符或者分隔符不正确
                 //则会被服务器将socket的状态设置为EPIPE Broken pipe，导致频繁重连
-                packetBytes[0]=[LFRtmpChunkFormat chunkPacketSplitChar:LFRtmpBasicHeaderMediaStreamID];
+                packetBytes[0]=[LFRtmpChunkFormat chunkPacketSplitChar:basicHeader.chunkStreamID];
                 //追加chunk数据
                 [sendPacketData appendData:chunkData];
             }
@@ -1097,8 +1097,7 @@
  *  发送元数据
  */
 -(void)sendSetDataFrame{
-    NSData *data=[_rtmpChunkFormat setDataFrameChunkFormat:_urlParser.streamName
-                                               videoConfig:_videoConfig
+    NSData *data=[_rtmpChunkFormat setDataFrameChunkFormat:_videoConfig
                                                audioConfig:_audioConfig];
     if(data.length){
         if([self write:(char *)[data bytes] length:(int)data.length isPacket:YES]){

@@ -137,13 +137,11 @@ typedef enum : char {
 /**
  *  用于拼装RTMP setDataFrame命令的AMF0数据结构,用于设置元数据metadata，音视频参数
  *
- *  @param streamName 流名
  *  @param videoConfig 视频信息
  *  @param audioConfig 音频信息
  *  @return NSData
  */
-+(NSData *)setDataFrameData:(NSString *)streamName
-                videoConfig:(LFVideoConfig *)videoConfig
++(NSData *)setDataFrameData:(LFVideoConfig *)videoConfig
                 audioConfig:(LFAudioConfig *)audioConfig;
 /**
  *  FLV AAC音频同步包。 不论向 RTMP 服务器推送音频还是视频，都需要按照 FLV 的格式进行封包。因此，在我们向服务器推送第一个 AAC包之前，

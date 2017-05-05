@@ -234,20 +234,18 @@
 /**
  *  用于拼装RTMP setDataFrame命令的AMF0数据结构,用于设置元数据metadata，音视频参数
  *
- *  @param streamName 流名
  *  @param videoConfig 视频信息
  *  @param audioConfig 音频信息
  *  @return NSData
  */
--(NSData *)setDataFrameChunkFormat:(NSString *)streamName
-                       videoConfig:(LFVideoConfig *)videoConfig
+-(NSData *)setDataFrameChunkFormat:(LFVideoConfig *)videoConfig
                        audioConfig:(LFAudioConfig *)audioConfig{
     NSMutableData *data=[[NSMutableData alloc] init];
     LFRtmpBasicHeader *basicHeader=[[LFRtmpBasicHeader alloc] init:LFRtmpBasicHeaderFmtLarge
                                                      chunkStreamID:LFRtmpBasicHeaderMediaStreamID
                                                          byteCount:LFRtmpBasicHeaderByteCount1];
     [data appendData:[basicHeader data]];
-    NSData *chunkData=[LFRtmpChunkData setDataFrameData:streamName videoConfig:videoConfig audioConfig:audioConfig];
+    NSData *chunkData=[LFRtmpChunkData setDataFrameData:videoConfig audioConfig:audioConfig];
     LFRtmpMessageHeader *msgHeader=[[LFRtmpMessageHeader alloc] init:LFRtmpBasicHeaderFmtLarge
                                                               typeID:LFRtmpDataMessage
                                                             streamID:0x1

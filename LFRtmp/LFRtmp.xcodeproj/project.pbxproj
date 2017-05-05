@@ -7,6 +7,7 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		9A950FF81EBC2E8C00F3FA8C /* DevicePlatform.m in Sources */ = {isa = PBXBuildFile; fileRef = 9A950FF71EBC2E8C00F3FA8C /* DevicePlatform.m */; };
 		D81A78291DC32CCB00495C5D /* ear_000.png in Resources */ = {isa = PBXBuildFile; fileRef = D81A77871DC32CCB00495C5D /* ear_000.png */; };
 		D81A782A1DC32CCB00495C5D /* ear_001.png in Resources */ = {isa = PBXBuildFile; fileRef = D81A77881DC32CCB00495C5D /* ear_001.png */; };
 		D81A782B1DC32CCB00495C5D /* ear_002.png in Resources */ = {isa = PBXBuildFile; fileRef = D81A77891DC32CCB00495C5D /* ear_002.png */; };
@@ -394,6 +395,8 @@
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
+		9A950FF61EBC2E8C00F3FA8C /* DevicePlatform.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = DevicePlatform.h; sourceTree = "<group>"; };
+		9A950FF71EBC2E8C00F3FA8C /* DevicePlatform.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = DevicePlatform.m; sourceTree = "<group>"; };
 		D81A77871DC32CCB00495C5D /* ear_000.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = ear_000.png; sourceTree = "<group>"; };
 		D81A77881DC32CCB00495C5D /* ear_001.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = ear_001.png; sourceTree = "<group>"; };
 		D81A77891DC32CCB00495C5D /* ear_002.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = ear_002.png; sourceTree = "<group>"; };
@@ -1005,6 +1008,15 @@
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
+		9A950FF51EBC2E8C00F3FA8C /* tools */ = {
+			isa = PBXGroup;
+			children = (
+				9A950FF61EBC2E8C00F3FA8C /* DevicePlatform.h */,
+				9A950FF71EBC2E8C00F3FA8C /* DevicePlatform.m */,
+			);
+			path = tools;
+			sourceTree = "<group>";
+		};
 		D81A77851DC32CCB00495C5D /* cat_ear */ = {
 			isa = PBXGroup;
 			children = (
@@ -1262,6 +1274,7 @@
 				D833DE261D6C57490029CFFB /* encode */,
 				D833DE021D6C57490029CFFB /* amf */,
 				D833DE391D6C57490029CFFB /* GPUImage */,
+				9A950FF51EBC2E8C00F3FA8C /* tools */,
 				D833DF961D6C57490029CFFB /* LFRtmpService.h */,
 				D833DF971D6C57490029CFFB /* LFRtmpService.m */,
 			);
@@ -2021,6 +2034,7 @@
 				D833E03B1D6C57490029CFFB /* GPUImageSaturationFilter.m in Sources */,
 				D833E0491D6C57490029CFFB /* GPUImageSourceOverBlendFilter.m in Sources */,
 				D833E0371D6C57490029CFFB /* GPUImageRGBErosionFilter.m in Sources */,
+				9A950FF81EBC2E8C00F3FA8C /* DevicePlatform.m in Sources */,
 				D833E0141D6C57490029CFFB /* GPUImageLuminanceRangeFilter.m in Sources */,
 				D833DFAD1D6C57490029CFFB /* ASObject.m in Sources */,
 				D833DFFF1D6C57490029CFFB /* GPUImageHighPassFilter.m in Sources */,

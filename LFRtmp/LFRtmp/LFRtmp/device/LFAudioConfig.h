@@ -3,7 +3,7 @@
 //  myrtmp
 //
 //  Created by liuf on 16/8/4.
-// 
+//
 //
 /**
  音频配置信息
@@ -13,24 +13,26 @@
 typedef enum : int {
     //32k音频码率
     LFAudioConfigBitRate_32k=32000,
-     //64k音频码率
+    //64k音频码率
     LFAudioConfigBitRate_64k=64000,
-     //96k音频码率
+    //96k音频码率
     LFAudioConfigBitRate_96k=96000,
-     //128k音频码率
+    //128k音频码率
     LFAudioConfigBitRate_128k=128000
 } LFAudioConfigBitRate;
 
 //音频采样率
 typedef enum : int {
+    //48k音频码率
+    LFAudioConfigSampleRate_48k=48000,
     //44k音频码率
-    LFAudioConfigSampleRate_44k=44100,
+    LFAudioConfigSampleRate_44k=44100
 } LFAudioConfigSampleRate;
 //声道
 typedef enum : char {
     //单声道
     LFAudioConfigChannelSingle=1,
-     //立体声
+    //立体声
     LFAudioConfigChannelStereo=2
 } LFAudioConfigChannel;
 

@@ -8,6 +8,7 @@
 
 #import "LFRtmpChunkData.h"
 #import "AMFArchiver.h"
+#import "DevicePlatform.h"
 static int sendTransactionID=1;
 @implementation LFRtmpChunkData
 {
@@ -373,13 +374,11 @@ static int sendTransactionID=1;
 /**
  *  用于拼装RTMP setDataFrame命令的AMF0数据结构,用于设置元数据metadata，音视频参数
  *
- *  @param streamName 流名
  *  @param videoConfig 视频信息
  *  @param audioConfig 音频信息
  *  @return NSData
  */
-+(NSData *)setDataFrameData:(NSString *)streamName
-                videoConfig:(LFVideoConfig *)videoConfig
++(NSData *)setDataFrameData:(LFVideoConfig *)videoConfig
                 audioConfig:(LFAudioConfig *)audioConfig{
     /**
      * setDataFrame命令结构
@@ -430,18 +429,19 @@ static int sendTransactionID=1;
     bytes[1]=0x0;
     //接下来的两字节表示为 AudioSpecificConfig 可以参看ISO AudioSpecificConfig（ISO/IEC 14496-3）
     //5 bit的编码类型AAC-LC对应的值为2二进制表示为00010
-    //4 bit的音频采样率441000对应的值为4二进制表示为0100
+    //4 bit的音频采样率441000对应的值为4二进制表示为0100,48000的值为3对应二进制为0011
     //4 bit的声道数 双声道对应的值为2二进制表示为0010
     //1 bit的IMDCT窗口长度固定为0
     //1 bit的表明是否依赖corecoder固定为0
     //1 bit的扩展标示，如果是AAC-LC这里必须是0
-    uint8_t byte=0x2;
-    byte=byte<<3;
-    byte=byte|0x2;
-    bytes[2]=byte;
-    byte=0x2;
-    byte=byte<<3;
-    bytes[3]=byte;
+    
+    if([DevicePlatform isIphone6sHLevel]){
+        bytes[2]=0x11;
+        bytes[3]=0x90;
+    }else{
+        bytes[2]=0x12;
+        bytes[3]=0x10;
+    }
     return data;
 }
 /**
