@@ -113,4 +113,10 @@ OSStatus inputDataProc (AudioConverterRef inAudioConverter,
         NSLog(@"-------------创建AAC编码器失败：%@！------------- ", [error description]);
     }
 }
+-(void)dealloc{
+    if(AudioConverterDispose(_audioConverter)!=noErr){
+        NSLog(@"-------------释放AAC编码器失败！-------------");
+    }
+    _audioConverter=NULL;
+}
 @end

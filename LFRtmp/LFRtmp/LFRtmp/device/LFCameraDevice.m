@@ -13,16 +13,6 @@
 #import "GPUImageStretchDistortionFilter.h"
 #import "GPUImagePinchDistortionFilter.h"
 #import "GPUImageVignetteFilter.h"
-typedef enum : int{
-    PHOTOS_EXIF_0ROW_TOP_0COL_LEFT			= 1, //   1  =  0th row is at the top, and 0th column is on the left (THE DEFAULT).
-    PHOTOS_EXIF_0ROW_TOP_0COL_RIGHT			= 2, //   2  =  0th row is at the top, and 0th column is on the right.
-    PHOTOS_EXIF_0ROW_BOTTOM_0COL_RIGHT      = 3, //   3  =  0th row is at the bottom, and 0th column is on the right.
-    PHOTOS_EXIF_0ROW_BOTTOM_0COL_LEFT       = 4, //   4  =  0th row is at the bottom, and 0th column is on the left.
-    PHOTOS_EXIF_0ROW_LEFT_0COL_TOP          = 5, //   5  =  0th row is on the left, and 0th column is the top.
-    PHOTOS_EXIF_0ROW_RIGHT_0COL_TOP         = 6, //   6  =  0th row is on the right, and 0th column is the top.
-    PHOTOS_EXIF_0ROW_RIGHT_0COL_BOTTOM      = 7, //   7  =  0th row is on the right, and 0th column is the bottom.
-    PHOTOS_EXIF_0ROW_LEFT_0COL_BOTTOM       = 8  //   8  =  0th row is on the left, and 0th column is the bottom.
-}PHOTOS_EXIF_0ROW;
 @interface LFCameraDevice()<GPUImageVideoCameraDelegate>
 @end
 @implementation LFCameraDevice
@@ -35,10 +25,19 @@ typedef enum : int{
     GPUImageAlphaBlendFilter *_blendFilter;
     GPUImageUIElement *_uiElementInput;
     UIView *_uiContentView;
-    BOOL _isFaceRecognitioning;
-    CIDetector *_faceDetector;
-    dispatch_queue_t _faceQueue;
-    CGRect _faceBounds;
+}
+/**
+ 设置代理
+ 
+ @param delegate NetServerDelegate
+ */
+-(void)setDelegate:(id<LFCameraDeviceDelegate>)delegate{
+    _delegate=delegate;
+    if (_delegate) {
+        _delegateFlags.isExistonCameraOutputData=[_delegate respondsToSelector:@selector(onCameraOutputData:)];
+    } else {
+        _delegateFlags.isExistonCameraOutputData=0;
+    }
 }
 /**
  *  初始化
@@ -49,14 +48,7 @@ typedef enum : int{
     self=[super init];
     if(self){
         _videoConfig=videoConfig;
-        _faceQueue=dispatch_queue_create("LFCameraDevice.facequeue", DISPATCH_QUEUE_SERIAL);
-        //识别器采用高性能低精度
-        NSDictionary *options=[NSDictionary dictionaryWithObject:CIDetectorAccuracyLow
-                                                          forKey:CIDetectorAccuracy];
-        _faceDetector=[CIDetector detectorOfType:CIDetectorTypeFace
-                                         context:nil
-                                         options:options];
-        self.zoomScale = 1.0;
+        [self setVideoZoomScale:1.0 andError:nil andfinish:nil];
         [self configCamera];
         [[NSNotificationCenter defaultCenter] addObserver:self
                                                  selector:@selector(willEnterBackground:)
@@ -76,7 +68,6 @@ typedef enum : int{
     if(!_camera){
         _camera=[[GPUImageVideoCamera alloc] initWithSessionPreset:_videoConfig.videoSessionPreset
                                                     cameraPosition:AVCaptureDevicePositionFront];
-        _camera.delegate=self;
         if(_videoConfig.isLandscape){
             if(_orientation==UIInterfaceOrientationLandscapeLeft||_orientation==UIInterfaceOrientationLandscapeRight){
                 _camera.outputImageOrientation=_orientation;
@@ -225,14 +216,70 @@ typedef enum : int{
 /**
  *  设置缩放
  */
--(void)setZoomScale:(CGFloat)zoomScale{
+-(void)setVideoZoomScale:(CGFloat)zoomScale andError:(void (^)())errorBlock andfinish:(void (^)())finishBlock{
     if(_camera&&_camera.inputCamera){
-        if([_camera.inputCamera lockForConfiguration:nil]){
-            _camera.inputCamera.videoZoomFactor=zoomScale;
-            [_camera.inputCamera unlockForConfiguration];
-            _zoomScale=zoomScale;
+        CGFloat maxVideoZoomScale = _camera.inputCamera.activeFormat.videoMaxZoomFactor;
+        if (maxVideoZoomScale > 1){
+            if([_camera.inputCamera lockForConfiguration:nil]){
+                _camera.inputCamera.videoZoomFactor=zoomScale;
+                [_camera.inputCamera unlockForConfiguration];
+                _zoomScale=zoomScale;
+                if(finishBlock){
+                    finishBlock();
+                }
+            }
+        }else{
+            if(errorBlock){
+                errorBlock();
+            }
         }
+        
     }
+}
+/**
+ *  手动对焦
+ *
+ *  @param point 焦点位置
+ */
+-(void)setFocusPoint:(CGPoint)point{
+    if (_camera.inputCamera.isFocusPointOfInterestSupported) {
+        NSError *error = nil;
+        [_camera.inputCamera lockForConfiguration:&error];
+        //设置焦点的位置
+        if ([_camera.inputCamera isFocusPointOfInterestSupported]) {
+            [_camera.inputCamera setFocusPointOfInterest:point];
+        }
+        
+        // 聚焦模式
+        if ([_camera.inputCamera isFocusModeSupported:AVCaptureFocusModeAutoFocus]) {
+            [_camera.inputCamera setFocusMode:AVCaptureFocusModeAutoFocus];
+        }else{
+            NSLog(@"-------------LFCameraDevice：对焦模式修改失败-------------");
+        }
+        [_camera.inputCamera unlockForConfiguration];
+    }
+}
+/**
+ *  设置对焦模式
+ *
+ *  @param focusMode 对焦模式，默认系统采用系统设备采用的是持续自动对焦模型AVCaptureFocusModeContinuousAutoFocus
+ */
+-(void)setFocusMode:(AVCaptureFocusMode)focusMode{
+    NSError *error = nil;
+    [_camera.inputCamera lockForConfiguration:&error];
+    // 聚焦模式
+    if ([_camera.inputCamera isFocusModeSupported:focusMode]) {
+        [_camera.inputCamera setFocusMode:focusMode];
+    }else{
+        NSLog(@"-------------LFCameraDevice：对焦模式修改失败-------------");
+    }
+    [_camera.inputCamera unlockForConfiguration];
+}
+/**
+ *  当前摄像头是否支持手动对焦
+ */
+-(BOOL)isSupportFocusPoint{
+    return _camera.inputCamera.isFocusPointOfInterestSupported;
 }
 /**
  *  滤镜 默认使用美颜效果 可使用GPUImage的定义的滤镜效果，也可基于GPUImage实现自定义滤镜
@@ -252,18 +299,6 @@ typedef enum : int{
     _logoView=logoView;
     _blendFilter.mix=_logoView.alpha;
     [_uiContentView addSubview:_logoView];
-    [self configFilter];
-}
-/**
- *  设置贴纸
- */
--(void)setFaceView:(UIView *)faceView{
-    if(_faceView){
-        [_faceView removeFromSuperview];
-        _faceView=nil;
-    }
-    _faceView=faceView;
-    [_uiContentView addSubview:_faceView];
     [self configFilter];
 }
 /**
@@ -314,8 +349,7 @@ typedef enum : int{
         __strong __typeof(weakSelf)strongSelf = weakSelf;
         @autoreleasepool {
             CVPixelBufferRef pixelBufferRef = [imageOutput.framebufferForOutput pixelBuffer];
-            if(pixelBufferRef&&strongSelf.delegate
-               &&[strongSelf.delegate respondsToSelector:@selector(onCameraOutputData:)]){
+            if(pixelBufferRef&&strongSelf.delegateFlags.isExistonCameraOutputData){
                 [strongSelf.delegate onCameraOutputData:pixelBufferRef];
             }
         }
@@ -331,106 +365,6 @@ typedef enum : int{
         [_filter addTarget:_output];
         [_output addTarget:_gpuImageView];
     }
-}
-#pragma mark GPUImageVideoCameraDelegate
-- (void)willOutputSampleBuffer:(CMSampleBufferRef)sampleBuffer{
-    if(!_isFaceRecognitioning&&_isEnableFace){
-        CFAllocatorRef ref=CFAllocatorGetDefault();
-        CMSampleBufferRef faceBuffer;
-        CMSampleBufferCreateCopy(ref, sampleBuffer, &faceBuffer);
-        __weak __typeof(self)weakSelf = self;
-        dispatch_async(_faceQueue, ^{
-            __strong __typeof(weakSelf)strongSelf = weakSelf;
-            [strongSelf faceRecognition:(__bridge CMSampleBufferRef)(CFBridgingRelease(faceBuffer))];
-        });
-    }
-}
-/**
- *  面部识别，并添加贴纸
- */
--(void)faceRecognition:(CMSampleBufferRef)sampleBuffer{
-    _isFaceRecognitioning=YES;
-    CVPixelBufferRef buffer=CMSampleBufferGetImageBuffer(sampleBuffer);
-    CFDictionaryRef dic=CMCopyDictionaryOfAttachments(kCFAllocatorDefault, sampleBuffer, kCMAttachmentMode_ShouldPropagate);
-    CIImage *image=[[CIImage alloc] initWithCVPixelBuffer:buffer options:(__bridge NSDictionary<NSString *,id> * _Nullable)(dic)];
-    if(dic){
-        CFRelease(dic);
-    }
-    BOOL isFrontCamera=NO;
-    if([_camera cameraPosition]!=AVCaptureDevicePositionBack){
-        isFrontCamera=YES;
-    }
-    UIDeviceOrientation orientation=[[UIDevice currentDevice] orientation];
-    PHOTOS_EXIF_0ROW exit;
-    switch (orientation) {
-        case UIDeviceOrientationPortraitUpsideDown:
-        {
-            exit=PHOTOS_EXIF_0ROW_LEFT_0COL_BOTTOM;
-        }
-            break;
-        case UIDeviceOrientationLandscapeLeft:
-        {
-            if (isFrontCamera){
-                exit = PHOTOS_EXIF_0ROW_BOTTOM_0COL_RIGHT;
-            }else{
-                exit = PHOTOS_EXIF_0ROW_TOP_0COL_LEFT;
-            }
-        }
-            break;
-        case UIDeviceOrientationLandscapeRight:
-        {
-            if (isFrontCamera){
-                exit = PHOTOS_EXIF_0ROW_TOP_0COL_LEFT;
-            }else{
-                exit = PHOTOS_EXIF_0ROW_BOTTOM_0COL_RIGHT;
-            }
-        }
-            break;
-        default:
-            exit=PHOTOS_EXIF_0ROW_RIGHT_0COL_TOP;
-            break;
-    }
-    
-    NSDictionary *imageOption=[NSDictionary dictionaryWithObject:[NSNumber numberWithInt:exit] forKey:CIDetectorImageOrientation];
-    NSArray *features=[_faceDetector featuresInImage:image options:imageOption];
-    if(features&&features.count>0){
-        CMFormatDescriptionRef fdesc = CMSampleBufferGetFormatDescription(sampleBuffer);
-        CGRect clap = CMVideoFormatDescriptionGetCleanAperture(fdesc, false);
-        dispatch_async(dispatch_get_main_queue(), ^{
-            CGRect previewFrame=_gpuImageView.superview.frame;
-            for(CIFaceFeature *faceFeature in features){
-                CGRect faceRect = [faceFeature bounds];
-                CGFloat temp = faceRect.size.width;
-                faceRect.size.width = faceRect.size.height;
-                faceRect.size.height = temp;
-                temp = faceRect.origin.x;
-                faceRect.origin.x = faceRect.origin.y;
-                faceRect.origin.y = temp;
-                CGFloat widthScaleBy = previewFrame.size.width / clap.size.height;
-                CGFloat heightScaleBy = previewFrame.size.height / clap.size.width;
-                faceRect.size.width *= widthScaleBy;
-                faceRect.size.height *= heightScaleBy;
-                faceRect.origin.x *= widthScaleBy;
-                faceRect.origin.y *= heightScaleBy;
-                faceRect = CGRectOffset(faceRect, previewFrame.origin.x, previewFrame.origin.y);
-                CGRect rect = CGRectMake(previewFrame.size.width - faceRect.origin.x - faceRect.size.width, faceRect.origin.y, faceRect.size.width, faceRect.size.height);
-                if (fabs(rect.origin.x - _faceBounds.origin.x) > 5.0) {
-                    _faceView.hidden=NO;
-                    _faceBounds = rect;
-                    CGSize size = _faceView.frame.size;
-                    _faceView.frame = CGRectMake(_faceBounds.origin.x +  (_faceBounds.size.width - size.width)/2, _faceBounds.origin.y - size.height, size.width, size.height);
-                    [_uiElementInput update];
-                }else{
-                    _faceView.hidden=YES;
-                }
-            }
-        });
-    }else{
-        dispatch_async(dispatch_get_main_queue(), ^{
-            _faceView.hidden=YES; 
-        });
-    }
-    _isFaceRecognitioning=NO;
 }
 #pragma mark notification handlder
 /**

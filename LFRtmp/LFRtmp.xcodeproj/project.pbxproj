@@ -7,7 +7,11 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		9A067C451EBFF9E600194393 /* LFRtmpPlayer.m in Sources */ = {isa = PBXBuildFile; fileRef = 9A067C441EBFF9E600194393 /* LFRtmpPlayer.m */; };
+		9A067C481EBFFA4400194393 /* LFRTMPReadBuffer.m in Sources */ = {isa = PBXBuildFile; fileRef = 9A067C471EBFFA4400194393 /* LFRTMPReadBuffer.m */; };
 		9A950FF81EBC2E8C00F3FA8C /* DevicePlatform.m in Sources */ = {isa = PBXBuildFile; fileRef = 9A950FF71EBC2E8C00F3FA8C /* DevicePlatform.m */; };
+		D80CBE5D1EEA31A20082DD1B /* LFVideoDecode.m in Sources */ = {isa = PBXBuildFile; fileRef = D80CBE5C1EEA31A20082DD1B /* LFVideoDecode.m */; };
+		D81826E81EE94B5E00238D48 /* LFVideoPacketData.m in Sources */ = {isa = PBXBuildFile; fileRef = D81826E71EE94B5E00238D48 /* LFVideoPacketData.m */; };
 		D81A78291DC32CCB00495C5D /* ear_000.png in Resources */ = {isa = PBXBuildFile; fileRef = D81A77871DC32CCB00495C5D /* ear_000.png */; };
 		D81A782A1DC32CCB00495C5D /* ear_001.png in Resources */ = {isa = PBXBuildFile; fileRef = D81A77881DC32CCB00495C5D /* ear_001.png */; };
 		D81A782B1DC32CCB00495C5D /* ear_002.png in Resources */ = {isa = PBXBuildFile; fileRef = D81A77891DC32CCB00495C5D /* ear_002.png */; };
@@ -188,10 +192,8 @@
 		D833DFB01D6C57490029CFFB /* NSObject-iPhoneExtensions.m in Sources */ = {isa = PBXBuildFile; fileRef = D833DE171D6C57490029CFFB /* NSObject-iPhoneExtensions.m */; };
 		D833DFB11D6C57490029CFFB /* LFBeautifulFilter.m in Sources */ = {isa = PBXBuildFile; fileRef = D833DE1B1D6C57490029CFFB /* LFBeautifulFilter.m */; };
 		D833DFB21D6C57490029CFFB /* LFOriginalFilter.m in Sources */ = {isa = PBXBuildFile; fileRef = D833DE1D1D6C57490029CFFB /* LFOriginalFilter.m */; };
-		D833DFB31D6C57490029CFFB /* LFAudioConfig.m in Sources */ = {isa = PBXBuildFile; fileRef = D833DE1F1D6C57490029CFFB /* LFAudioConfig.m */; };
 		D833DFB41D6C57490029CFFB /* LFCameraDevice.m in Sources */ = {isa = PBXBuildFile; fileRef = D833DE211D6C57490029CFFB /* LFCameraDevice.m */; };
 		D833DFB51D6C57490029CFFB /* LFMicDevice.m in Sources */ = {isa = PBXBuildFile; fileRef = D833DE231D6C57490029CFFB /* LFMicDevice.m */; };
-		D833DFB61D6C57490029CFFB /* LFVideoConfig.m in Sources */ = {isa = PBXBuildFile; fileRef = D833DE251D6C57490029CFFB /* LFVideoConfig.m */; };
 		D833DFB71D6C57490029CFFB /* AVEncoder.mm in Sources */ = {isa = PBXBuildFile; fileRef = D833DE291D6C57490029CFFB /* AVEncoder.mm */; };
 		D833DFB81D6C57490029CFFB /* MP4Atom.m in Sources */ = {isa = PBXBuildFile; fileRef = D833DE2B1D6C57490029CFFB /* MP4Atom.m */; };
 		D833DFB91D6C57490029CFFB /* NALUnit.mm in Sources */ = {isa = PBXBuildFile; fileRef = D833DE2C1D6C57490029CFFB /* NALUnit.mm */; };
@@ -391,12 +393,31 @@
 		D851D3941DC6E788007D2684 /* moustache_007@2x.png in Resources */ = {isa = PBXBuildFile; fileRef = D851D38A1DC6E788007D2684 /* moustache_007@2x.png */; };
 		D851D3951DC6E788007D2684 /* moustache_008@2x.png in Resources */ = {isa = PBXBuildFile; fileRef = D851D38B1DC6E788007D2684 /* moustache_008@2x.png */; };
 		D851D3961DC6E788007D2684 /* moustache_009@2x.png in Resources */ = {isa = PBXBuildFile; fileRef = D851D38C1DC6E788007D2684 /* moustache_009@2x.png */; };
+		D859A35F1EC0185C00ED4A06 /* MainViewController.m in Sources */ = {isa = PBXBuildFile; fileRef = D859A35D1EC0185B00ED4A06 /* MainViewController.m */; };
+		D859A3601EC0185C00ED4A06 /* MainViewController.xib in Resources */ = {isa = PBXBuildFile; fileRef = D859A35E1EC0185B00ED4A06 /* MainViewController.xib */; };
+		D859A3641EC0195600ED4A06 /* PlayViewController.m in Sources */ = {isa = PBXBuildFile; fileRef = D859A3621EC0195600ED4A06 /* PlayViewController.m */; };
+		D859A3651EC0195600ED4A06 /* PlayViewController.xib in Resources */ = {isa = PBXBuildFile; fileRef = D859A3631EC0195600ED4A06 /* PlayViewController.xib */; };
 		D85F4B7B1DC1F8C40085E8AF /* crown.jpg in Resources */ = {isa = PBXBuildFile; fileRef = D85F4B7A1DC1F8C40085E8AF /* crown.jpg */; };
+		D889CF1A1ECD3D8D008B61E5 /* MCAudioOutputQueue.m in Sources */ = {isa = PBXBuildFile; fileRef = D889CF181ECD3D8D008B61E5 /* MCAudioOutputQueue.m */; };
+		D8E00D1B1ECBDD3F00B87DB1 /* AAPLEAGLLayer.m in Sources */ = {isa = PBXBuildFile; fileRef = D8E00D191ECBDD3F00B87DB1 /* AAPLEAGLLayer.m */; };
+		D8E00D271ECBE07900B87DB1 /* LFAudioDataParser.m in Sources */ = {isa = PBXBuildFile; fileRef = D8E00D261ECBE07900B87DB1 /* LFAudioDataParser.m */; };
+		D8E00D2A1ECBE08800B87DB1 /* LFVideoDataParser.m in Sources */ = {isa = PBXBuildFile; fileRef = D8E00D291ECBE08800B87DB1 /* LFVideoDataParser.m */; };
+		D8FDA45C1EC40FE800FC1125 /* LFAudioConfig.m in Sources */ = {isa = PBXBuildFile; fileRef = D8FDA4591EC40FE800FC1125 /* LFAudioConfig.m */; };
+		D8FDA45D1EC40FE800FC1125 /* LFVideoConfig.m in Sources */ = {isa = PBXBuildFile; fileRef = D8FDA45B1EC40FE800FC1125 /* LFVideoConfig.m */; };
+		D8FDA4601EC4100F00FC1125 /* LFPlayConfig.m in Sources */ = {isa = PBXBuildFile; fileRef = D8FDA45F1EC4100F00FC1125 /* LFPlayConfig.m */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
+		9A067C431EBFF9DA00194393 /* LFRtmpPlayer.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = LFRtmpPlayer.h; sourceTree = "<group>"; };
+		9A067C441EBFF9E600194393 /* LFRtmpPlayer.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = LFRtmpPlayer.m; sourceTree = "<group>"; };
+		9A067C461EBFFA4400194393 /* LFRTMPReadBuffer.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = LFRTMPReadBuffer.h; sourceTree = "<group>"; };
+		9A067C471EBFFA4400194393 /* LFRTMPReadBuffer.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = LFRTMPReadBuffer.m; sourceTree = "<group>"; };
 		9A950FF61EBC2E8C00F3FA8C /* DevicePlatform.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = DevicePlatform.h; sourceTree = "<group>"; };
 		9A950FF71EBC2E8C00F3FA8C /* DevicePlatform.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = DevicePlatform.m; sourceTree = "<group>"; };
+		D80CBE5B1EEA31A20082DD1B /* LFVideoDecode.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = LFVideoDecode.h; sourceTree = "<group>"; };
+		D80CBE5C1EEA31A20082DD1B /* LFVideoDecode.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = LFVideoDecode.m; sourceTree = "<group>"; };
+		D81826E61EE94B5E00238D48 /* LFVideoPacketData.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = LFVideoPacketData.h; sourceTree = "<group>"; };
+		D81826E71EE94B5E00238D48 /* LFVideoPacketData.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = LFVideoPacketData.m; sourceTree = "<group>"; };
 		D81A77871DC32CCB00495C5D /* ear_000.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = ear_000.png; sourceTree = "<group>"; };
 		D81A77881DC32CCB00495C5D /* ear_001.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = ear_001.png; sourceTree = "<group>"; };
 		D81A77891DC32CCB00495C5D /* ear_002.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = ear_002.png; sourceTree = "<group>"; };
@@ -596,14 +617,10 @@
 		D833DE1B1D6C57490029CFFB /* LFBeautifulFilter.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = LFBeautifulFilter.m; sourceTree = "<group>"; };
 		D833DE1C1D6C57490029CFFB /* LFOriginalFilter.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = LFOriginalFilter.h; sourceTree = "<group>"; };
 		D833DE1D1D6C57490029CFFB /* LFOriginalFilter.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = LFOriginalFilter.m; sourceTree = "<group>"; };
-		D833DE1E1D6C57490029CFFB /* LFAudioConfig.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = LFAudioConfig.h; sourceTree = "<group>"; };
-		D833DE1F1D6C57490029CFFB /* LFAudioConfig.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = LFAudioConfig.m; sourceTree = "<group>"; };
 		D833DE201D6C57490029CFFB /* LFCameraDevice.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = LFCameraDevice.h; sourceTree = "<group>"; };
 		D833DE211D6C57490029CFFB /* LFCameraDevice.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = LFCameraDevice.m; sourceTree = "<group>"; };
 		D833DE221D6C57490029CFFB /* LFMicDevice.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = LFMicDevice.h; sourceTree = "<group>"; };
 		D833DE231D6C57490029CFFB /* LFMicDevice.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = LFMicDevice.m; sourceTree = "<group>"; };
-		D833DE241D6C57490029CFFB /* LFVideoConfig.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = LFVideoConfig.h; sourceTree = "<group>"; };
-		D833DE251D6C57490029CFFB /* LFVideoConfig.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = LFVideoConfig.m; sourceTree = "<group>"; };
 		D833DE281D6C57490029CFFB /* AVEncoder.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = AVEncoder.h; sourceTree = "<group>"; };
 		D833DE291D6C57490029CFFB /* AVEncoder.mm */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.objcpp; path = AVEncoder.mm; sourceTree = "<group>"; };
 		D833DE2A1D6C57490029CFFB /* MP4Atom.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = MP4Atom.h; sourceTree = "<group>"; };
@@ -994,7 +1011,28 @@
 		D851D38A1DC6E788007D2684 /* moustache_007@2x.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = "moustache_007@2x.png"; sourceTree = "<group>"; };
 		D851D38B1DC6E788007D2684 /* moustache_008@2x.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = "moustache_008@2x.png"; sourceTree = "<group>"; };
 		D851D38C1DC6E788007D2684 /* moustache_009@2x.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = "moustache_009@2x.png"; sourceTree = "<group>"; };
+		D859A35C1EC0185B00ED4A06 /* MainViewController.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = MainViewController.h; sourceTree = "<group>"; };
+		D859A35D1EC0185B00ED4A06 /* MainViewController.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = MainViewController.m; sourceTree = "<group>"; };
+		D859A35E1EC0185B00ED4A06 /* MainViewController.xib */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = file.xib; path = MainViewController.xib; sourceTree = "<group>"; };
+		D859A3611EC0195600ED4A06 /* PlayViewController.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = PlayViewController.h; sourceTree = "<group>"; };
+		D859A3621EC0195600ED4A06 /* PlayViewController.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = PlayViewController.m; sourceTree = "<group>"; };
+		D859A3631EC0195600ED4A06 /* PlayViewController.xib */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = file.xib; path = PlayViewController.xib; sourceTree = "<group>"; };
 		D85F4B7A1DC1F8C40085E8AF /* crown.jpg */ = {isa = PBXFileReference; lastKnownFileType = image.jpeg; path = crown.jpg; sourceTree = "<group>"; };
+		D889CF181ECD3D8D008B61E5 /* MCAudioOutputQueue.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = MCAudioOutputQueue.m; sourceTree = "<group>"; };
+		D889CF191ECD3D8D008B61E5 /* MCAudioOutputQueue.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = MCAudioOutputQueue.h; sourceTree = "<group>"; };
+		D8E00D191ECBDD3F00B87DB1 /* AAPLEAGLLayer.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = AAPLEAGLLayer.m; sourceTree = "<group>"; };
+		D8E00D1A1ECBDD3F00B87DB1 /* AAPLEAGLLayer.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = AAPLEAGLLayer.h; sourceTree = "<group>"; };
+		D8E00D251ECBE07900B87DB1 /* LFAudioDataParser.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = LFAudioDataParser.h; sourceTree = "<group>"; };
+		D8E00D261ECBE07900B87DB1 /* LFAudioDataParser.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = LFAudioDataParser.m; sourceTree = "<group>"; };
+		D8E00D281ECBE08800B87DB1 /* LFVideoDataParser.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = LFVideoDataParser.h; sourceTree = "<group>"; };
+		D8E00D291ECBE08800B87DB1 /* LFVideoDataParser.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = LFVideoDataParser.m; sourceTree = "<group>"; };
+		D8E00D321ECC576C00B87DB1 /* AudioToolbox.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = AudioToolbox.framework; path = System/Library/Frameworks/AudioToolbox.framework; sourceTree = SDKROOT; };
+		D8FDA4581EC40FE800FC1125 /* LFAudioConfig.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = LFAudioConfig.h; sourceTree = "<group>"; };
+		D8FDA4591EC40FE800FC1125 /* LFAudioConfig.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = LFAudioConfig.m; sourceTree = "<group>"; };
+		D8FDA45A1EC40FE800FC1125 /* LFVideoConfig.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = LFVideoConfig.h; sourceTree = "<group>"; };
+		D8FDA45B1EC40FE800FC1125 /* LFVideoConfig.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = LFVideoConfig.m; sourceTree = "<group>"; };
+		D8FDA45E1EC4100F00FC1125 /* LFPlayConfig.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = LFPlayConfig.h; sourceTree = "<group>"; };
+		D8FDA45F1EC4100F00FC1125 /* LFPlayConfig.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = LFPlayConfig.m; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -1013,8 +1051,21 @@
 			children = (
 				9A950FF61EBC2E8C00F3FA8C /* DevicePlatform.h */,
 				9A950FF71EBC2E8C00F3FA8C /* DevicePlatform.m */,
+				9A067C461EBFFA4400194393 /* LFRTMPReadBuffer.h */,
+				9A067C471EBFFA4400194393 /* LFRTMPReadBuffer.m */,
 			);
 			path = tools;
+			sourceTree = "<group>";
+		};
+		9A950FFC1EBC70EF00F3FA8C /* player */ = {
+			isa = PBXGroup;
+			children = (
+				D889CF191ECD3D8D008B61E5 /* MCAudioOutputQueue.h */,
+				D889CF181ECD3D8D008B61E5 /* MCAudioOutputQueue.m */,
+				D8E00D1A1ECBDD3F00B87DB1 /* AAPLEAGLLayer.h */,
+				D8E00D191ECBDD3F00B87DB1 /* AAPLEAGLLayer.m */,
+			);
+			path = player;
 			sourceTree = "<group>";
 		};
 		D81A77851DC32CCB00495C5D /* cat_ear */ = {
@@ -1201,11 +1252,25 @@
 			path = moustache;
 			sourceTree = "<group>";
 		};
+		D81AF5E91ECAF4B9009DFCCE /* decode */ = {
+			isa = PBXGroup;
+			children = (
+				D8E00D251ECBE07900B87DB1 /* LFAudioDataParser.h */,
+				D8E00D261ECBE07900B87DB1 /* LFAudioDataParser.m */,
+				D8E00D281ECBE08800B87DB1 /* LFVideoDataParser.h */,
+				D8E00D291ECBE08800B87DB1 /* LFVideoDataParser.m */,
+				D80CBE5B1EEA31A20082DD1B /* LFVideoDecode.h */,
+				D80CBE5C1EEA31A20082DD1B /* LFVideoDecode.m */,
+			);
+			path = decode;
+			sourceTree = "<group>";
+		};
 		D833DB4C1D6C56230029CFFB = {
 			isa = PBXGroup;
 			children = (
 				D833DB571D6C56230029CFFB /* LFRtmp */,
 				D833DB561D6C56230029CFFB /* Products */,
+				D8E00D311ECC576B00B87DB1 /* Frameworks */,
 			);
 			sourceTree = "<group>";
 		};
@@ -1223,9 +1288,15 @@
 				D833DE011D6C57490029CFFB /* LFRtmp */,
 				D833DB5B1D6C56230029CFFB /* AppDelegate.h */,
 				D833DB5C1D6C56230029CFFB /* AppDelegate.m */,
+				D859A35C1EC0185B00ED4A06 /* MainViewController.h */,
+				D859A35D1EC0185B00ED4A06 /* MainViewController.m */,
+				D859A35E1EC0185B00ED4A06 /* MainViewController.xib */,
 				D833DB5E1D6C56230029CFFB /* ViewController.h */,
 				D833DB5F1D6C56230029CFFB /* ViewController.m */,
 				D833DD181D6C56DE0029CFFB /* ViewController.xib */,
+				D859A3611EC0195600ED4A06 /* PlayViewController.h */,
+				D859A3621EC0195600ED4A06 /* PlayViewController.m */,
+				D859A3631EC0195600ED4A06 /* PlayViewController.xib */,
 				D833DD161D6C56DE0029CFFB /* FilterSelectModalView.h */,
 				D833DD171D6C56DE0029CFFB /* FilterSelectModalView.m */,
 				D833DD241D6C56DE0029CFFB /* FilterSelectModalView.xib */,
@@ -1270,13 +1341,18 @@
 			isa = PBXGroup;
 			children = (
 				D833DF981D6C57490029CFFB /* rtmp */,
+				D8FDA4571EC40FE800FC1125 /* config */,
+				9A950FFC1EBC70EF00F3FA8C /* player */,
 				D833DE181D6C57490029CFFB /* device */,
+				D81AF5E91ECAF4B9009DFCCE /* decode */,
 				D833DE261D6C57490029CFFB /* encode */,
 				D833DE021D6C57490029CFFB /* amf */,
 				D833DE391D6C57490029CFFB /* GPUImage */,
 				9A950FF51EBC2E8C00F3FA8C /* tools */,
 				D833DF961D6C57490029CFFB /* LFRtmpService.h */,
 				D833DF971D6C57490029CFFB /* LFRtmpService.m */,
+				9A067C431EBFF9DA00194393 /* LFRtmpPlayer.h */,
+				9A067C441EBFF9E600194393 /* LFRtmpPlayer.m */,
 			);
 			path = LFRtmp;
 			sourceTree = "<group>";
@@ -1313,10 +1389,6 @@
 			isa = PBXGroup;
 			children = (
 				D833DE191D6C57490029CFFB /* filter */,
-				D833DE1E1D6C57490029CFFB /* LFAudioConfig.h */,
-				D833DE1F1D6C57490029CFFB /* LFAudioConfig.m */,
-				D833DE241D6C57490029CFFB /* LFVideoConfig.h */,
-				D833DE251D6C57490029CFFB /* LFVideoConfig.m */,
 				D833DE221D6C57490029CFFB /* LFMicDevice.h */,
 				D833DE231D6C57490029CFFB /* LFMicDevice.m */,
 				D833DE201D6C57490029CFFB /* LFCameraDevice.h */,
@@ -1758,6 +1830,29 @@
 			path = rtmp;
 			sourceTree = "<group>";
 		};
+		D8E00D311ECC576B00B87DB1 /* Frameworks */ = {
+			isa = PBXGroup;
+			children = (
+				D8E00D321ECC576C00B87DB1 /* AudioToolbox.framework */,
+			);
+			name = Frameworks;
+			sourceTree = "<group>";
+		};
+		D8FDA4571EC40FE800FC1125 /* config */ = {
+			isa = PBXGroup;
+			children = (
+				D8FDA4581EC40FE800FC1125 /* LFAudioConfig.h */,
+				D8FDA4591EC40FE800FC1125 /* LFAudioConfig.m */,
+				D8FDA45A1EC40FE800FC1125 /* LFVideoConfig.h */,
+				D8FDA45B1EC40FE800FC1125 /* LFVideoConfig.m */,
+				D8FDA45E1EC4100F00FC1125 /* LFPlayConfig.h */,
+				D8FDA45F1EC4100F00FC1125 /* LFPlayConfig.m */,
+				D81826E61EE94B5E00238D48 /* LFVideoPacketData.h */,
+				D81826E71EE94B5E00238D48 /* LFVideoPacketData.m */,
+			);
+			path = config;
+			sourceTree = "<group>";
+		};
 /* End PBXGroup section */
 
 /* Begin PBXNativeTarget section */
@@ -1844,6 +1939,7 @@
 				D81A78C31DC32CCB00495C5D /* moustache_074.png in Resources */,
 				D81A78391DC32CCB00495C5D /* ear_016.png in Resources */,
 				D81A78891DC32CCB00495C5D /* moustache_016.png in Resources */,
+				D859A3601EC0185C00ED4A06 /* MainViewController.xib in Resources */,
 				D833DDFE1D6C56DE0029CFFB /* screen_switch_sh.png in Resources */,
 				D81A78AA1DC32CCB00495C5D /* moustache_049.png in Resources */,
 				D81A78311DC32CCB00495C5D /* ear_008.png in Resources */,
@@ -1920,6 +2016,7 @@
 				D833DDF81D6C56DE0029CFFB /* btn_flip_a.png in Resources */,
 				D81A789B1DC32CCB00495C5D /* moustache_034.png in Resources */,
 				D81A786F1DC32CCB00495C5D /* ear_070.png in Resources */,
+				D859A3651EC0195600ED4A06 /* PlayViewController.xib in Resources */,
 				D81A789E1DC32CCB00495C5D /* moustache_037.png in Resources */,
 				D81A78A71DC32CCB00495C5D /* moustache_046.png in Resources */,
 				D81A78C51DC32CCB00495C5D /* moustache_076.png in Resources */,
@@ -2006,10 +2103,13 @@
 				D833DFDD1D6C57490029CFFB /* GPUImageCropFilter.m in Sources */,
 				D833DFCE1D6C57490029CFFB /* GPUImageCGAColorspaceFilter.m in Sources */,
 				D833E05A1D6C57490029CFFB /* GPUImageTwoInputFilter.m in Sources */,
+				D8FDA45C1EC40FE800FC1125 /* LFAudioConfig.m in Sources */,
 				D833DFD81D6C57490029CFFB /* GPUImageColorMatrixFilter.m in Sources */,
 				D833DFAE1D6C57490029CFFB /* FlexDataTypes.m in Sources */,
 				D833E06F1D6C57490029CFFB /* LFRtmpExtendedTimestamp.m in Sources */,
+				D859A35F1EC0185C00ED4A06 /* MainViewController.m in Sources */,
 				D833DFD51D6C57490029CFFB /* GPUImageColorDodgeBlendFilter.m in Sources */,
+				9A067C481EBFFA4400194393 /* LFRTMPReadBuffer.m in Sources */,
 				D833E00D1D6C57490029CFFB /* GPUImageLevelsFilter.m in Sources */,
 				D833DFE91D6C57490029CFFB /* GPUImageExclusionBlendFilter.m in Sources */,
 				D833DFE01D6C57490029CFFB /* GPUImageDarkenBlendFilter.m in Sources */,
@@ -2026,6 +2126,7 @@
 				D833DFC01D6C57490029CFFB /* GPUImage3x3ConvolutionFilter.m in Sources */,
 				D833DFF41D6C57490029CFFB /* GPUImageGaussianBlurFilter.m in Sources */,
 				D833DFFE1D6C57490029CFFB /* GPUImageHighlightShadowTintFilter.m in Sources */,
+				D8FDA4601EC4100F00FC1125 /* LFPlayConfig.m in Sources */,
 				D833E06E1D6C57490029CFFB /* LFRtmpChunkFormat.m in Sources */,
 				D833E0471D6C57490029CFFB /* GPUImageSolarizeFilter.m in Sources */,
 				D833E04B1D6C57490029CFFB /* GPUImageStillCamera.m in Sources */,
@@ -2040,6 +2141,7 @@
 				D833DFFF1D6C57490029CFFB /* GPUImageHighPassFilter.m in Sources */,
 				D833DFBD1D6C57490029CFFB /* LFVideoHardEncode.m in Sources */,
 				D833E0181D6C57490029CFFB /* GPUImageMaskFilter.m in Sources */,
+				D889CF1A1ECD3D8D008B61E5 /* MCAudioOutputQueue.m in Sources */,
 				D833DFFA1D6C57490029CFFB /* GPUImageHardLightBlendFilter.m in Sources */,
 				D833E06D1D6C57490029CFFB /* LFRtmpChunkData.m in Sources */,
 				D833E0581D6C57490029CFFB /* GPUImageTransformFilter.m in Sources */,
@@ -2054,7 +2156,6 @@
 				D833DFF11D6C57490029CFFB /* GPUImageFramebuffer.m in Sources */,
 				D833DFEB1D6C57490029CFFB /* GPUImageFalseColorFilter.m in Sources */,
 				D833E0631D6C57490029CFFB /* GPUImageWhiteBalanceFilter.m in Sources */,
-				D833DFB31D6C57490029CFFB /* LFAudioConfig.m in Sources */,
 				D833DFA91D6C57490029CFFB /* AMFArchiver.m in Sources */,
 				D833E0711D6C57490029CFFB /* LFRtmpResponseCommand.m in Sources */,
 				D833DFAA1D6C57490029CFFB /* AMFDebugUnarchiver.m in Sources */,
@@ -2070,6 +2171,7 @@
 				D833E01A1D6C57490029CFFB /* GPUImageMissEtikateFilter.m in Sources */,
 				D833E03E1D6C57490029CFFB /* GPUImageSharpenFilter.m in Sources */,
 				D833DFD61D6C57490029CFFB /* GPUImageColorInvertFilter.m in Sources */,
+				D80CBE5D1EEA31A20082DD1B /* LFVideoDecode.m in Sources */,
 				D833E0591D6C57490029CFFB /* GPUImageTwoInputCrossTextureSamplingFilter.m in Sources */,
 				D833DFB41D6C57490029CFFB /* LFCameraDevice.m in Sources */,
 				D833DFCB1D6C57490029CFFB /* GPUImageBuffer.m in Sources */,
@@ -2091,6 +2193,7 @@
 				D833DFF51D6C57490029CFFB /* GPUImageGaussianBlurPositionFilter.m in Sources */,
 				D833DFA71D6C57490029CFFB /* AMF.m in Sources */,
 				D833E0701D6C57490029CFFB /* LFRtmpMessageHeader.m in Sources */,
+				D81826E81EE94B5E00238D48 /* LFVideoPacketData.m in Sources */,
 				D833DFB71D6C57490029CFFB /* AVEncoder.mm in Sources */,
 				D833DB601D6C56230029CFFB /* ViewController.m in Sources */,
 				D833E0071D6C57490029CFFB /* GPUImageiOSBlurFilter.m in Sources */,
@@ -2125,12 +2228,15 @@
 				D833DFCD1D6C57490029CFFB /* GPUImageCannyEdgeDetectionFilter.m in Sources */,
 				D833DFB51D6C57490029CFFB /* LFMicDevice.m in Sources */,
 				D833E00B1D6C57490029CFFB /* GPUImageLanczosResamplingFilter.m in Sources */,
+				D8E00D1B1ECBDD3F00B87DB1 /* AAPLEAGLLayer.m in Sources */,
 				D833E0011D6C57490029CFFB /* GPUImageHistogramFilter.m in Sources */,
+				D8E00D2A1ECBE08800B87DB1 /* LFVideoDataParser.m in Sources */,
 				D833E0151D6C57490029CFFB /* GPUImageLuminanceThresholdFilter.m in Sources */,
 				D833DFAF1D6C57490029CFFB /* NSObject-AMFExtensions.m in Sources */,
 				D833E0121D6C57490029CFFB /* GPUImageLookupFilter.m in Sources */,
 				D833E0691D6C57490029CFFB /* GPUImagePicture.m in Sources */,
 				D833DFF71D6C57490029CFFB /* GPUImageGlassSphereFilter.m in Sources */,
+				D8FDA45D1EC40FE800FC1125 /* LFVideoConfig.m in Sources */,
 				D833E03A1D6C57490029CFFB /* GPUImageSaturationBlendFilter.m in Sources */,
 				D833DFBF1D6C57490029CFFB /* GLProgram.m in Sources */,
 				D833DFE81D6C57490029CFFB /* GPUImageErosionFilter.m in Sources */,
@@ -2150,6 +2256,7 @@
 				D833E04D1D6C57490029CFFB /* GPUImageSubtractBlendFilter.m in Sources */,
 				D833E0601D6C57490029CFFB /* GPUImageVignetteFilter.m in Sources */,
 				D833DFBA1D6C57490029CFFB /* VideoEncoder.m in Sources */,
+				D859A3641EC0195600ED4A06 /* PlayViewController.m in Sources */,
 				D833E02C1D6C57490029CFFB /* GPUImagePixellateFilter.m in Sources */,
 				D833E0721D6C57490029CFFB /* LFRtmpUrlParser.m in Sources */,
 				D833DFF01D6C57490029CFFB /* GPUImageFourInputFilter.m in Sources */,
@@ -2172,7 +2279,6 @@
 				D833E06A1D6C57490029CFFB /* GPUImageView.m in Sources */,
 				D833E01C1D6C57490029CFFB /* GPUImageMosaicFilter.m in Sources */,
 				D833E0501D6C57490029CFFB /* GPUImageTextureOutput.m in Sources */,
-				D833DFB61D6C57490029CFFB /* LFVideoConfig.m in Sources */,
 				D833DFC31D6C57490029CFFB /* GPUImageAddBlendFilter.m in Sources */,
 				D833E0041D6C57490029CFFB /* GPUImageHSBFilter.m in Sources */,
 				D833DFE51D6C57490029CFFB /* GPUImageDissolveBlendFilter.m in Sources */,
@@ -2184,6 +2290,7 @@
 				D833DFD71D6C57490029CFFB /* GPUImageColorLocalBinaryPatternFilter.m in Sources */,
 				D833E0301D6C57490029CFFB /* GPUImagePolkaDotFilter.m in Sources */,
 				D833E03D1D6C57490029CFFB /* GPUImageSepiaFilter.m in Sources */,
+				D8E00D271ECBE07900B87DB1 /* LFAudioDataParser.m in Sources */,
 				D833DFAC1D6C57490029CFFB /* AMFUnarchiver.m in Sources */,
 				D833E00E1D6C57490029CFFB /* GPUImageLightenBlendFilter.m in Sources */,
 				D833DFDF1D6C57490029CFFB /* GPUImageCrosshatchFilter.m in Sources */,
@@ -2204,6 +2311,7 @@
 				D833E0081D6C57490029CFFB /* GPUImageJFAVoronoiFilter.m in Sources */,
 				D833DFDA1D6C57490029CFFB /* GPUImageColourFASTFeatureDetector.m in Sources */,
 				D833DFC71D6C57490029CFFB /* GPUImageAverageLuminanceThresholdFilter.m in Sources */,
+				9A067C451EBFF9E600194393 /* LFRtmpPlayer.m in Sources */,
 				D833E05E1D6C57490029CFFB /* GPUImageUnsharpMaskFilter.m in Sources */,
 				D833E0091D6C57490029CFFB /* GPUImageKuwaharaFilter.m in Sources */,
 				D833DFFD1D6C57490029CFFB /* GPUImageHighlightShadowFilter.m in Sources */,
@@ -2255,9 +2363,10 @@
 				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
 				GCC_WARN_UNUSED_FUNCTION = YES;
 				GCC_WARN_UNUSED_VARIABLE = YES;
-				IPHONEOS_DEPLOYMENT_TARGET = 7.0;
+				IPHONEOS_DEPLOYMENT_TARGET = 8.0;
 				MTL_ENABLE_DEBUG_INFO = YES;
 				ONLY_ACTIVE_ARCH = YES;
+				OTHER_LDFLAGS = "";
 				SDKROOT = iphoneos;
 			};
 			name = Debug;
@@ -2293,8 +2402,9 @@
 				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
 				GCC_WARN_UNUSED_FUNCTION = YES;
 				GCC_WARN_UNUSED_VARIABLE = YES;
-				IPHONEOS_DEPLOYMENT_TARGET = 7.0;
+				IPHONEOS_DEPLOYMENT_TARGET = 8.0;
 				MTL_ENABLE_DEBUG_INFO = NO;
+				OTHER_LDFLAGS = "";
 				SDKROOT = iphoneos;
 				VALIDATE_PRODUCT = YES;
 			};
@@ -2305,8 +2415,16 @@
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				DEVELOPMENT_TEAM = 8WJPHWWSGG;
+				ENABLE_BITCODE = NO;
+				FRAMEWORK_SEARCH_PATHS = "";
 				INFOPLIST_FILE = LFRtmp/Info.plist;
+				IPHONEOS_DEPLOYMENT_TARGET = 8.0;
 				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/Frameworks";
+				LIBRARY_SEARCH_PATHS = (
+					"$(inherited)",
+					"$(PROJECT_DIR)/LFRtmp/LFRtmp/decode/faad/lib",
+				);
+				OTHER_LDFLAGS = "-ObjC";
 				PRODUCT_BUNDLE_IDENTIFIER = liufang.LFRtmp;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				PROVISIONING_PROFILE = "3cb1dcbe-0a16-4561-92fb-6e2d2abef2ce";
@@ -2319,8 +2437,16 @@
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				DEVELOPMENT_TEAM = 8WJPHWWSGG;
+				ENABLE_BITCODE = NO;
+				FRAMEWORK_SEARCH_PATHS = "";
 				INFOPLIST_FILE = LFRtmp/Info.plist;
+				IPHONEOS_DEPLOYMENT_TARGET = 8.0;
 				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/Frameworks";
+				LIBRARY_SEARCH_PATHS = (
+					"$(inherited)",
+					"$(PROJECT_DIR)/LFRtmp/LFRtmp/decode/faad/lib",
+				);
+				OTHER_LDFLAGS = "-ObjC";
 				PRODUCT_BUNDLE_IDENTIFIER = liufang.LFRtmp;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				PROVISIONING_PROFILE = "3cb1dcbe-0a16-4561-92fb-6e2d2abef2ce";

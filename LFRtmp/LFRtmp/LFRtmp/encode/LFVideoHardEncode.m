@@ -16,7 +16,7 @@
     NSData *_sps;
     NSData *_pps;
     BOOL _isBackgroud;
-    id<LFVideoEncodeDelegate> _delegate;
+    __weak id<LFVideoEncodeDelegate> _delegate;
 }
 /**
  *  初始化
@@ -124,7 +124,7 @@ static void compressonOutputCallback(void *VTref, void *VTFrameRef, OSStatus sta
             info.isKeyFrame = keyframe;
             info.sps = videoEncoder->_sps;
             info.pps = videoEncoder->_pps;
-            if (videoEncoder->_delegate && [videoEncoder->_delegate respondsToSelector:@selector(onDidVideoEncodeOutput:)]) {
+            if (videoEncoder->_delegate) {
                 [videoEncoder->_delegate onDidVideoEncodeOutput:info];
             }
             bufferOffset += AVCCHeaderLength + NALUnitLength;

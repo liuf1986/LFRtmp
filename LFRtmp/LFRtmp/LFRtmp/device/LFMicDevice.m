@@ -16,7 +16,6 @@
 @implementation LFMicDevice
 {
     LFAudioConfig *_audioConfig;
-    dispatch_queue_t _qunue;
 }
 /**
  *  初始化
@@ -26,10 +25,22 @@
     self=[super init];
     if(self){
         _audioConfig=audioConfig;
-        _qunue=dispatch_queue_create("LFMicDevice.Qunue", DISPATCH_QUEUE_SERIAL);
         [self configMicDevice];
     }
     return self;
+}
+/**
+ 设置代理
+ 
+ @param delegate NetServerDelegate
+ */
+-(void)setDelegate:(id<LFMicDeviceDelegate>)delegate{
+    _delegate=delegate;
+    if (_delegate) {
+        _delegateFlags.isExistOnMicOutputData=[_delegate respondsToSelector:@selector(onMicOutputData:)];
+    } else {
+        _delegateFlags.isExistOnMicOutputData=0;
+    }
 }
 /**
  *  配置麦克
@@ -107,8 +118,8 @@
  *  @param inNumberFrames 样品帧的数量
  */
 -(void)outputAudioData:(AudioBufferList)audioBufferList{
-    if(self.delegate && [self.delegate respondsToSelector:@selector(onMicOutputData:)]){
-        [self.delegate onMicOutputData:audioBufferList];
+    if(_delegateFlags.isExistOnMicOutputData){
+        [_delegate onMicOutputData:audioBufferList];
     }
 }
 /**

@@ -24,6 +24,10 @@ typedef enum : char {
  */
 @interface LFRtmpChunkData : NSObject
 /**
+ *  原始二进制数据
+ */
+@property (strong,readonly,nonatomic) NSData *data;
+/**
  *  初始化
  *
  *  @param data        用于初始化的二进制数据
@@ -31,7 +35,7 @@ typedef enum : char {
  *
  *  @return self
  */
--(instancetype)init:(NSMutableData *)data;
+-(instancetype)init:(NSData *)data;
 /**
  *  处理协议控制消息 Set Chunk Size
  *
@@ -102,7 +106,7 @@ typedef enum : char {
  *
  *  @return NSData
  */
-+(NSData *)createStreamData;
++(NSArray *)createStreamData;
 /**
  *  用于拼装RTMP checkbw命令的AMF0数据结构
  *
@@ -171,4 +175,37 @@ typedef enum : char {
  *  @return NSData
  */
 +(NSData *)flvVideoData:(LFVideoEncodeInfo *)info;
+/**
+ *  用于拼装RTMP getStreamLength命令的AMF0数据结构
+ *
+ *  @param streamName 流名
+ *
+ *  @return NSData
+ */
++(NSData *)getStreamLengthData:(NSString *)streamName;
+/**
+ *  用于拼装RTMP play命令的AMF0数据结构
+ *
+ *  @param streamName 流名
+ *
+ *  @return NSData
+ */
++(NSData *)playData:(NSString *)streamName;
+/**
+ *  用于拼装RTMP 用户控制事件的setBufferLength，这个事件在服务器开始处理流数据前发送。类型为3，事件数据的前 4 字节表示流 ID,接下来的4 字节表示缓冲区的大小(单位是毫秒)。
+ *
+ *  @param streamid 流ID
+ *  @param  buffersize 缓冲区大小
+ *  @return NSData
+ */
++(NSData *)setBufferLengthData:(uint32_t)streamId bufferSize:(uint32_t)bufferSize;
+/**
+ *  用于拼装RTMP pause命令的AMF0数据结构
+ *
+ *  @param isFlag 暂停流还是继续
+ *  @param milliSeconds 流暂停或者继续播放的毫秒数
+ 
+ *  @return NSData
+ */
++(NSData *)pauseData:(BOOL)isFlag milliSeconds:(int)milliSeconds;
 @end

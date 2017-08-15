@@ -3,7 +3,7 @@
 //  myrtmp
 //
 //  Created by liuf on 16/7/28.
-// 
+//
 //
 
 #import "LFRtmpResponseCommand.h"
@@ -33,18 +33,45 @@
  */
 -(void)decodeCommand{
     AMFUnarchiver *unarchiver=[[AMFUnarchiver alloc] initForReadingWithData:_data encoding:kAMF0Encoding];
-    //获取CommandName的数据
-    _commandName=(NSString *)[unarchiver decodeObject];
-    _commandType=[self getCmdType:_commandName];
-    _transactionID=[(NSNumber *)[unarchiver decodeObject] intValue];
-    if(!unarchiver.isAtEnd){
-        _commandObject=[unarchiver decodeObject];
-    }
-    if(!unarchiver.isAtEnd){
-        _optionObject=[unarchiver decodeObject];
-    }
-    if(!unarchiver.isAtEnd){
-        NSLog(@"--------------RTMP：调用decodeCommand，还有未解码的数据！--------------");
+    @try {
+        //获取CommandName的数据
+        _commandName=(NSString *)[unarchiver decodeObject];
+        _commandType=[self getCmdType:_commandName];
+        if(!unarchiver.isAtEnd){
+            id object=[unarchiver decodeObject];
+            if([object isKindOfClass:[NSNumber class]]){
+                _transactionID=[(NSNumber *)object intValue];
+            }
+        }
+        if(!unarchiver.isAtEnd){
+            _commandObject=[unarchiver decodeObject];
+        }
+        if(!unarchiver.isAtEnd){
+            _optionObject=[unarchiver decodeObject];
+        }
+        unarchiver=[[AMFUnarchiver alloc] initForReadingWithData:_data encoding:kAMF0Encoding];
+        [unarchiver decodeObject];
+        _allData=[NSMutableArray new];
+        while (YES) {
+            if(unarchiver.isAtEnd){
+                break;
+            }else{
+                @try {
+                    id object=[unarchiver decodeObject];
+                    if([object isKindOfClass:[ASObject class]]){
+                        ASObject *asObject=(ASObject *)object;
+                        [_allData addObject:asObject.properties];
+                    }else{
+                        [_allData addObject:object];
+                    }
+                } @catch (NSException *exception) {
+                    break;
+                }
+            }
+        }
+        
+    } @catch (NSException *exception) {
+        NSLog(@"--------------RTMP：调用decodeCommand异常！--------------");
     }
 }
 -(BOOL)isAsObjectCommandObject{
@@ -188,6 +215,8 @@
         cmdType=LFRtmpResponseCommandOnStatus;
     }else if([cmdName isEqualToString:@"ONFCUNPUBLISH"]){
         cmdType=LFRtmpResponseCommandOnFCUnpublish;
+    }else if([cmdName isEqualToString:@"ONMETADATA"]){
+        cmdType=LFRtmpResponseCommandOnMetaData;
     }
     return cmdType;
 }

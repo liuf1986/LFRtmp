@@ -52,7 +52,7 @@
  *
  *  @return NSData
  */
--(NSData *)createStreamChunkForamt;
+-(NSArray *)createStreamChunkForamt;
 /**
  *  用于RTMP checkbw的命令数据块
  *
@@ -117,7 +117,37 @@
  *  @return NSData
  */
 -(NSData *)flvVideoData:(LFVideoEncodeInfo *)info;
-
+/**
+ *  用于拼装RTMP getStreamLength命令的AMF0数据结构
+ *
+ *  @param streamName 流名
+ *  @return NSData
+ */
+-(NSData *)getStreamLengthChunkFormat:(NSString *)streamName;
+/**
+ *  用于拼装RTMP play命令的AMF0数据结构
+ *
+ *  @param streamName 流名
+ *  @return NSData
+ */
+-(NSData *)playChunkFormat:(NSString *)streamName;
+/**
+ *  用于拼装RTMP 用户控制事件的setBufferLength，这个事件在服务器开始处理流数据前发送。类型为3，事件数据的前 4 字节表示流 ID,接下来的4 字节表示缓冲区的大小(单位是毫秒)。
+ *
+ *  @param streamid 流ID
+ *  @param  buffersize 缓冲区大小
+ *  @return NSData
+ */
+-(NSData *)setBufferLengthChunkFormat:(uint32_t)streamId bufferSize:(uint32_t)bufferSize;
+/**
+ *  用于拼装RTMP pause命令的AMF0数据结构
+ *
+ *  @param isFlag 暂停流还是继续
+ *  @param milliSeconds 流暂停或者继续播放的毫秒数
+ 
+ *  @return NSData
+ */
+-(NSData *)pauseChunkFormat:(BOOL)isFlag milliSeconds:(int)milliSeconds;
 /**
  *  当前时间戳
  *
@@ -125,9 +155,10 @@
  */
 -(uint32_t)currentTimestamp;
 /**
- 如果一个包的大小超过chunk size的大小（如果没有设置默认为128b）则128整倍数位上的数据不计入有效数据
- 这种数据称为包分隔符，包分隔符的规则为0xc0|chunk stream ID
- 例如如果是音视频块流则chunk stream ID为0x4，包分隔符=0xc0|0x2=0xc4
+ 如果一个包的大小超过chunk size的大小 则需要添加包分隔符，包分隔符的规则为0xc0|chunk stream ID
+ 例如如果是协议控制块流则chunk stream ID为0x2，包分隔符=0xc0|0x2=0xc2
+ 每两个分隔符之前的数据量是chunk size 的大小，而在整个数据包中分隔符的下标位置的规律
+ 为chunk size，(chunk size)*2+1，(chunk size)*3+2 。。。这个规律
  *
  *  @param chunkStreamID 块流ID
  *

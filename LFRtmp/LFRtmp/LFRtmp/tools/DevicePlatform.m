@@ -1,9 +1,9 @@
 //
 //  DevicePlatform.m
-//  CDITVDuke
+//  LFRtmp
 //
-//  Created by CDITV on 2017/5/5.
-//  Copyright © 2017年 CDITVD. All rights reserved.
+//  Created by liuf on 2017/5/5.
+//  Copyright © 2017年 liuf. All rights reserved.
 //
 
 #import "DevicePlatform.h"

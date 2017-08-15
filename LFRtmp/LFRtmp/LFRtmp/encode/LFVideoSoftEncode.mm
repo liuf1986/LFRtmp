@@ -21,7 +21,7 @@
     NSMutableData *_videoSPSandPPS;
     NSMutableData *_sei;
     BOOL _isBackgroud;
-    id<LFVideoEncodeDelegate> _delegate;
+    __weak  id<LFVideoEncodeDelegate> _delegate;
 }
 /**
  *  初始化
@@ -81,7 +81,6 @@
         }
         CMTime pts=CMTimeMake(ptsValue, 1000);
         NSMutableData *aggregateFrameData=[NSMutableData data];
-        BOOL hasKeyframe=NO;
         for (NSData *data in frames) {
             unsigned char* pNal=(unsigned char*)[data bytes];
             int idc=pNal[0] & 0x60;
@@ -91,7 +90,6 @@
                 _sei=[NSMutableData dataWithData:data];
                 continue;
             } else if (naltype==5) {
-                hasKeyframe = YES;
                 NSMutableData *IDRData=[NSMutableData dataWithData:_videoSPSandPPS];
                 if (_sei) {
                     [IDRData appendData:_naluData];
@@ -114,7 +112,7 @@
             info.isKeyFrame=(naltype == 5);
             info.sps=_sps;
             info.pps=_pps;
-            if(_delegate&&[_delegate respondsToSelector:@selector(onDidVideoEncodeOutput:)]){
+            if(_delegate){
                 [_delegate onDidVideoEncodeOutput:info];
             }
         }

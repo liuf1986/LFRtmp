@@ -31,7 +31,7 @@
  *
  *  @return self
  */
-+(instancetype)extendedTimestamp:(NSMutableData *)data{
++(instancetype)extendedTimestamp:(NSData *)data{
     if(data.length!=4){
         NSLog(@"--------------RTMP：调用extendedTimestamp失败，数据不满足格式要求！--------------");
         return nil;

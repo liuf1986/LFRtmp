@@ -11,11 +11,13 @@
 #import "LFVideoConfig.h"
 #import <AVFoundation/AVFoundation.h>
 #import "LFCameraDevice.h"
+#import "LFRtmpUrlParser.h"
 typedef enum : NSUInteger {
     LFRTMPStatusConnectionFail,//连接失败
     LFRTMPStatusPublishSending,//发送推流指令
     LFRTMPStatusPublishReady,//发送推送指令成功，可以推流
     LFRTMPStatusPublishFail,//发送推送指令失败，不能推流
+    LFRTMPStatusPublishFailBadName //流名错误
 } LFRTMPStatus;
 
 @protocol LFRtmpServiceDelegate <NSObject>
@@ -24,12 +26,16 @@ typedef enum : NSUInteger {
  *
  *  @param status 状态描述符
  */
--(void)onRtmpStatusChange:(LFRTMPStatus)status;
+-(void)onRtmpStatusChange:(LFRTMPStatus)status message:(id)message;
 @end
 
 @interface LFRtmpService : NSObject
 
 @property (weak,nonatomic) id<LFRtmpServiceDelegate> delegate;
+/**
+ *  URL地址解析器
+ */
+@property (strong,nonatomic) LFRtmpUrlParser *urlParser;
 /**
  *  视频采集预览页
  */
@@ -57,17 +63,13 @@ typedef enum : NSUInteger {
  */
 @property (assign,nonatomic) BOOL isOpenFlash;
 /**
- *  是否启用面部识别功能
- */
-@property (assign,nonatomic) BOOL isEnableFace;
-/**
  *  是否横屏
  */
 @property (assign,nonatomic) BOOL isLandscape;
 /**
  *  焦距调整
  */
-@property (assign,nonatomic) CGFloat zoomScale;
+@property (assign,nonatomic,readonly) CGFloat zoomScale;
 /**
  *  滤镜 默认使用美颜效果，可使用GPUImage的定义的滤镜效果，也可基于GPUImage实现自定义滤镜
  */
@@ -76,10 +78,7 @@ typedef enum : NSUInteger {
  *  水印
  */
 @property (strong,nonatomic) UIView *logoView;
-/**
- *  贴纸
- */
-@property (strong,nonatomic) UIView *faceView;
++ (id)sharedInstance;
 /**
  *  初始化
  *
@@ -88,19 +87,33 @@ typedef enum : NSUInteger {
  *  @param preview 预览页
  *  @return self
  */
--(instancetype)initWitConfig:(LFVideoConfig *)videoConfig
-                 audioConfig:(LFAudioConfig *)audioConfig
-                     preview:(UIView *)preview;
+-(void)setupWithVideoConfig:(LFVideoConfig *)videoConfig
+                audioConfig:(LFAudioConfig *)audioConfig
+                    preview:(UIView *)preview;
+/**
+ *  焦距调整
+ */
+-(void)setVideoZoomScale:(CGFloat)zoomScale andError:(void (^)())errorBlock;
+/**
+ *  手动对焦
+ *
+ *  @param point 焦点位置
+ */
+-(void)setFocusPoint:(CGPoint)point;
+/**
+ *  设置对焦模式
+ *
+ *  @param focusMode 对焦模式，默认系统采用系统设备采用的是持续自动对焦模型AVCaptureFocusModeContinuousAutoFocus
+ */
+-(void)setFocusMode:(AVCaptureFocusMode)focusMode;
+/**
+ *  当前摄像头是否支持手动对焦
+ */
+-(BOOL)isSupportFocusPoint;
 /**
  *  启动连接
- *
- *  @param hostname 主机串
- *  @param port 端口
- *  @param audioConfig 音频配置信息
- *  @param videoConfig 视频配置信息
  */
--(void)start:(NSString *)url
-        port:(int)port;
+-(void)start;
 /**
  *  重新连接
  */

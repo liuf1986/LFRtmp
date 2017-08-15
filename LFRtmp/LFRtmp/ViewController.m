@@ -26,30 +26,35 @@
     BOOL _isStarted;
     BOOL _isFrontCamera;
     FilterSelectModalView *_filterSelectView;
+    LFVideoConfig *_videoConfig;
 }
 - (void)viewDidLoad {
     [super viewDidLoad];
     _isFrontCamera=YES;
-    rtmpService=[[LFRtmpService alloc] initWitConfig:[LFVideoConfig defaultConfig]
-                                         audioConfig:[LFAudioConfig defaultConfig]
-                                             preview:_preveiw];
+    _videoConfig=[[LFVideoConfig alloc] init:LFVideoConfigQuality_Hight3 isLandscape:NO];
+    rtmpService=[LFRtmpService sharedInstance];
+    [rtmpService setupWithVideoConfig:_videoConfig
+                          audioConfig:[LFAudioConfig defaultConfig]
+                              preview:_preveiw];
     rtmpService.delegate=self;
+ 
     [self.view addSubview:_statusBtn];
     _filterSelectView=[[NSBundle mainBundle] loadNibNamed:@"FilterSelectModalView" owner:nil options:nil][0];
     _filterSelectView.delegate=self;
 }
 
 -(void)addLogo{
-    UIImageView *logoView=[[UIImageView alloc] initWithFrame:CGRectMake(50, 56, 80, 17)];
+    UIImageView *logoView=[[UIImageView alloc] initWithFrame:CGRectMake(0, 56, 80, 17)];
     logoView.image=[UIImage imageNamed:@"logo"];
     [rtmpService setLogoView:logoView];
 }
 -(IBAction)toggleCapture:(id)sender{
     if(!_isStarted){
         [self addLogo];
-        [_palyButton setImage:[UIImage imageNamed:@"capture_stop_button"] forState:(UIControlStateNormal)];
-        //[rtmpService start:@"rtmp://xxx/xx/xx" port:1935];
-        [rtmpService start:@"rtmp://139.224.53.118/liuf/test" port:1935];
+        [_palyButton setImage:[UIImage imageNamed:@"capture_stop_button"]
+                     forState:(UIControlStateNormal)];
+        rtmpService.urlParser=[[LFRtmpUrlParser alloc] initWithUrl:@"rtmp推流地址" port:1935];
+        [rtmpService start];
     }else{
         [_palyButton setImage:[UIImage imageNamed:@"capture_button"] forState:(UIControlStateNormal)];
         _statusLabel.text=@"未连接";
@@ -63,16 +68,16 @@
         if([rtmpService isLandscape]){
             UIInterfaceOrientation orientation=[[UIApplication sharedApplication] statusBarOrientation];
             if(orientation==UIInterfaceOrientationPortrait||orientation==UIInterfaceOrientationPortraitUpsideDown){
-                [rtmpService setVideoConfig:[[LFVideoConfig alloc]
-                                             init:LFVideoConfigQuality_Default isLandscape:NO]];
+                _videoConfig=[[LFVideoConfig alloc] init:LFVideoConfigQuality_Hight3 isLandscape:NO];
+                [rtmpService setVideoConfig:_videoConfig];
                 [rtmpService setOrientation:orientation];
             }
             
         }else{
             UIInterfaceOrientation orientation=[[UIApplication sharedApplication] statusBarOrientation];
             if(orientation==UIInterfaceOrientationLandscapeLeft||orientation==UIInterfaceOrientationLandscapeRight){
-                [rtmpService setVideoConfig:[[LFVideoConfig alloc]
-                                             init:LFVideoConfigQuality_Default isLandscape:YES]];
+                _videoConfig=[[LFVideoConfig alloc] init:LFVideoConfigQuality_Hight3 isLandscape:YES];
+                [rtmpService setVideoConfig:_videoConfig];
                 [rtmpService setOrientation:orientation];
             }
         }
@@ -94,6 +99,7 @@
 
 -(IBAction)back:(id)sender{
     [rtmpService quit];
+    [self.navigationController popViewControllerAnimated:YES];
 }
 
 -(IBAction)selectFilter:(id)sender{
@@ -106,7 +112,10 @@
     
 }
 - (IBAction)scrub:(id)sender{
-    [rtmpService setZoomScale:[_slider value]];
+    __weak UISlider *slider=_slider;
+    [rtmpService setVideoZoomScale:[_slider value] andError:^{
+        [slider setValue:1.0 animated:YES];
+    }];
 }
 - (IBAction)endScrubbing:(id)sender{
     
@@ -124,7 +133,7 @@
  *
  *  @param status 状态描述符
  */
--(void)onRtmpStatusChange:(LFRTMPStatus)status{
+-(void)onRtmpStatusChange:(LFRTMPStatus)status message:(id)message{
     switch (status) {
         case LFRTMPStatusConnectionFail:
         {
@@ -147,6 +156,14 @@
            [rtmpService reStart];
         }
             break;
+        case LFRTMPStatusPublishFailBadName:
+        {
+            [_statusLabel setText:@"错误的流名"];
+            //这种情况可能是推流地址过期造成的，可获取新的推流地址，重新开始连接
+            //rtmpService.urlParser=[[LFRtmpUrlParser alloc] initWithUrl:@"新推流地址" port:1935];
+            [rtmpService reStart];
+        }
+            break;
         default:
             break;
     }
@@ -156,5 +173,13 @@
     [super didReceiveMemoryWarning];
     // Dispose of any resources that can be recreated.
 }
+-(void)viewWillAppear:(BOOL)animated{
+    [super viewWillAppear:animated];
+    self.navigationController.navigationBar.hidden=YES;
+}
 
+-(void)viewWillDisappear:(BOOL)animated{
+    [super viewWillDisappear:animated];
+    self.navigationController.navigationBar.hidden=NO;
+}
 @end

@@ -69,7 +69,11 @@ typedef enum : char {
 
 @interface LFRtmpMessageHeader : NSObject
 @property (assign,nonatomic,readonly) uint32_t timestamp;
-@property (assign,nonatomic) uint32_t length;//是实际发送数据的大小,如果一个包的大小超过chunk size的大小（如果没有设置默认为128b）则128整倍数位上的数据不计入有效数据
+//是实际发送数据的大小,如果一个包的大小超过chunk size的大小 则需要添加包分隔符，包分隔符的规则为0xc0|chunk stream ID
+//例如如果是协议控制块流则chunk stream ID为0x2，包分隔符=0xc0|0x2=0xc2
+//每两个分隔符之前的数据量是chunk size 的大小，而在整个数据包中分隔符的下标位置的规律
+//为chunk size，(chunk size)*2+1，(chunk size)*3+2 。。。这个规律
+@property (assign,nonatomic) uint32_t length;
 @property (assign,nonatomic) LFRtmpMessageType typeID;
 @property (assign,nonatomic) uint32_t streamID;//它采用小端存储的方式
 @property (assign,nonatomic,readonly) LFRtmpBasicHeaderFmtType fmtType;
@@ -98,7 +102,7 @@ typedef enum : char {
  *
  *  @return self
  */
-+(instancetype)messageHeader:(LFRtmpBasicHeaderFmtType)fmtType data:(NSMutableData *)data;
++(instancetype)messageHeader:(LFRtmpBasicHeaderFmtType)fmtType data:(NSData *)data;
 /**
  *  返回message header数据
  *

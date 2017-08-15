@@ -9,6 +9,10 @@
 #import <Foundation/Foundation.h>
 #import <AVFoundation/AVFoundation.h>
 #import "LFVideoConfig.h"
+typedef struct {
+    unsigned int isExistonCameraOutputData:1;
+} LFCameraDeviceDelegateFlags;
+
 @protocol LFCameraDeviceDelegate <NSObject>
 /**
  *  摄像头采集到的数据输出
@@ -37,6 +41,7 @@ typedef enum : char {
  *  代理
  */
 @property (weak,nonatomic) id<LFCameraDeviceDelegate> delegate;
+@property (assign,nonatomic) LFCameraDeviceDelegateFlags delegateFlags;
 /**
  *  预览页
  */
@@ -58,32 +63,43 @@ typedef enum : char {
  */
 @property (assign,nonatomic) BOOL isOpenFlash;
 /**
- *  是否启用面部识别功能
- */
-@property (assign,nonatomic) BOOL isEnableFace;
-/**
  *  mirror
  */
 @property (assign,nonatomic) BOOL mirror;
 /**
  *  焦距调整 默认为1.0，可在1.0 ~ 3.0之间调整
  */
-@property (assign,nonatomic) CGFloat zoomScale;
+@property (assign,nonatomic,readonly) CGFloat zoomScale;
 /**
  *  水印
  */
 @property (strong,nonatomic) UIView *logoView;
-
-/**
- *  贴纸
- */
-@property (strong,nonatomic) UIView *faceView;
 /**
  *  初始化
  *
  *  @param videoConfig 音频采样配置
  */
 -(instancetype)init:(LFVideoConfig *)videoConfig;
+/**
+ *  设置缩放
+ */
+-(void)setVideoZoomScale:(CGFloat)zoomScale andError:(void (^)())errorBlock andfinish:(void (^)())finishBlock;
+/**
+ *  手动对焦
+ *
+ *  @param point 焦点位置
+ */
+-(void)setFocusPoint:(CGPoint)point;
+/**
+ *  设置对焦模式
+ *
+ *  @param focusMode 对焦模式，默认系统采用系统设备采用的是持续自动对焦模型AVCaptureFocusModeContinuousAutoFocus
+ */
+-(void)setFocusMode:(AVCaptureFocusMode)focusMode;
+/**
+ *  当前摄像头是否支持手动对焦
+ */
+-(BOOL)isSupportFocusPoint;
 /**
  *  停止采集
  */

@@ -27,7 +27,7 @@
  *
  *  @return self
  */
-+(instancetype)extendedTimestamp:(NSMutableData *)data;
++(instancetype)extendedTimestamp:(NSData *)data;
 /**
  *  数据块
  *

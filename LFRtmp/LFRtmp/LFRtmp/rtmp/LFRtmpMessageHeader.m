@@ -42,7 +42,7 @@
  *
  *  @return self
  */
-+(instancetype)messageHeader:(LFRtmpBasicHeaderFmtType)fmtType data:(NSMutableData *)data{
++(instancetype)messageHeader:(LFRtmpBasicHeaderFmtType)fmtType data:(NSData *)data{
     switch (fmtType) {
         case LFRtmpBasicHeaderFmtLarge:
         {
@@ -50,7 +50,7 @@
                 NSLog(@"--------------RTMP：调用messageHeader失败，数据不满足格式要求！--------------");
                 return nil;
             }
-            uint8_t *bytes=[data mutableBytes];
+            const uint8_t *bytes=[data bytes];
             uint32_t timestamp=0;
             for(int i=0;i<3;i++){
                 timestamp=timestamp|bytes[i];
@@ -92,7 +92,7 @@
                 NSLog(@"--------------RTMP：调用messageHeader失败，数据不满足格式要求！--------------");
                 return nil;
             }
-            uint8_t *bytes=[data mutableBytes];
+            const uint8_t *bytes=[data bytes];
             uint32_t timestamp=0;
             for(int i=0;i<3;i++){
                 timestamp=timestamp|bytes[i];
@@ -125,7 +125,7 @@
                 NSLog(@"--------------RTMP：调用messageHeader失败，数据不满足格式要求！--------------");
                 return nil;
             }
-            uint8_t *bytes=[data mutableBytes];
+            const uint8_t *bytes=[data bytes];
             uint32_t timestamp=0;
             for(int i=0;i<3;i++){
                 timestamp=timestamp|bytes[i];

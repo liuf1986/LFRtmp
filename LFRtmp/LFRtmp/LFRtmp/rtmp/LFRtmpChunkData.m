@@ -9,11 +9,8 @@
 #import "LFRtmpChunkData.h"
 #import "AMFArchiver.h"
 #import "DevicePlatform.h"
-static int sendTransactionID=1;
+static int sendTransactionID=0;
 @implementation LFRtmpChunkData
-{
-    NSMutableData *_data;
-}
 /**
  *  初始化
  *
@@ -22,7 +19,7 @@ static int sendTransactionID=1;
  *
  *  @return self
  */
--(instancetype)init:(NSMutableData *)data{
+-(instancetype)init:(NSData *)data{
     self=[super init];
     if(self){
         _data=data;
@@ -37,7 +34,7 @@ static int sendTransactionID=1;
 -(uint32_t)parseSetChunkSize{
     if(_data.length==4){
         uint32_t size=0;
-        uint8_t *bytes=[_data mutableBytes];
+        const uint8_t *bytes=[_data bytes];
         for(int i=0;i<4;i++){
             size=size|bytes[i];
             if(i!=3){
@@ -58,7 +55,7 @@ static int sendTransactionID=1;
 -(uint32_t)parseAbortMessage{
     if(_data.length==4){
         uint32_t streamID=0;
-        uint8_t *bytes=[_data mutableBytes];
+        const uint8_t *bytes=[_data bytes];
         for(int i=0;i<4;i++){
             streamID=streamID|bytes[i];
             if(i!=3){
@@ -79,7 +76,7 @@ static int sendTransactionID=1;
 -(uint32_t)parseAcknowledgement{
     if(_data.length==4){
         uint32_t seqNum=0;
-        uint8_t *bytes=[_data mutableBytes];
+        const uint8_t *bytes=[_data bytes];
         for(int i=0;i<4;i++){
             seqNum=seqNum|bytes[i];
             if(i!=3){
@@ -100,7 +97,7 @@ static int sendTransactionID=1;
 -(uint32_t)parseWindowAckSize{
     if(_data.length==4){
         uint32_t size=0;
-        uint8_t *bytes=[_data mutableBytes];
+        const uint8_t *bytes=[_data bytes];
         for(int i=0;i<4;i++){
             size=size|bytes[i];
             if(i!=3){
@@ -120,7 +117,7 @@ static int sendTransactionID=1;
  */
 -(NSDictionary *)parseBandWidth{
     if(_data.length==5){
-        uint8_t *bytes=[_data mutableBytes];
+        const uint8_t *bytes=[_data bytes];
         uint32_t size=0;
         for(int i=0;i<4;i++){
             size=size|bytes[i];
@@ -144,7 +141,7 @@ static int sendTransactionID=1;
  */
 -(BOOL)parseUserCtrlStreamBegin{
     if(_data.length==6){
-        uint8_t *bytes=[_data mutableBytes];
+        const uint8_t *bytes=[_data bytes];
         uint16_t eventType=0;
         //用户控制消息的格式为前两个字节为类型，后4个字节为附带数据
         eventType=eventType|bytes[0];
@@ -153,7 +150,7 @@ static int sendTransactionID=1;
         if(eventType==0){
             return YES;
         }else{
-            NSLog(@"--------------RTMP：调用parseUserCtrlStreamBegin失败，这不是Stream Begin Event！--------------");
+//            NSLog(@"--------------RTMP：调用parseUserCtrlStreamBegin失败，这不是Stream Begin Event！--------------");
             return NO;
         }
     }else{
@@ -171,7 +168,7 @@ static int sendTransactionID=1;
     //如果是命令消息则判断首字节是否是0x2,因为命令消息的前部都是以字符串表示命令名称
     //而在AMF0中字符串类型是0x2
     if(_data.length>0){
-        uint8_t *bytes=[_data mutableBytes];
+        const uint8_t *bytes=[_data bytes];
         uint8_t byte=bytes[0];
         if(byte!=0x2){
             NSLog(@"--------------RTMP：调用parseCommand失败，命令消息的首字节必须为0x2！--------------");
@@ -202,7 +199,7 @@ static int sendTransactionID=1;
      |可选用户参数 | Object | 任意可选的信息 |
      */
     [archiver encodeObject:@"connect"];//命令名称
-    [archiver encodeObject:[NSNumber numberWithInt:sendTransactionID++]];
+    [archiver encodeObject:[NSNumber numberWithInt:++sendTransactionID]];
     NSMutableDictionary *dic=[NSMutableDictionary new];
     [dic setValue:appName forKey:@"app"];
     [dic setValue:@"nonprivate" forKey:@"type"];
@@ -229,7 +226,7 @@ static int sendTransactionID=1;
      |流名 | String | streamName |
      */
     [archiver encodeObject:@"releaseStream"];
-    [archiver encodeObject:[NSNumber numberWithInt:sendTransactionID++]];
+    [archiver encodeObject:[NSNumber numberWithInt:++sendTransactionID]];
     [archiver encodeUnsignedChar:kAMF0NullType];
     [archiver encodeObject:streamName];
     return [archiver data];
@@ -252,7 +249,7 @@ static int sendTransactionID=1;
      |流名 | String | streamName |
      */
     [archiver encodeObject:@"FCPublish"];
-    [archiver encodeObject:[NSNumber numberWithInt:sendTransactionID++]];
+    [archiver encodeObject:[NSNumber numberWithInt:++sendTransactionID]];
     [archiver encodeUnsignedChar:kAMF0NullType];
     [archiver encodeObject:streamName];
     return [archiver data];
@@ -262,7 +259,7 @@ static int sendTransactionID=1;
  *
  *  @return NSData
  */
-+(NSData *)createStreamData{
++(NSArray *)createStreamData{
     AMFArchiver *archiver=[[AMFArchiver alloc] initForWritingWithMutableData:[NSMutableData data]
                                                                     encoding:kAMF0Encoding];
     /**
@@ -273,9 +270,12 @@ static int sendTransactionID=1;
      |命令对象 | Object | 键值对的命令信息 |
      */
     [archiver encodeObject:@"createStream"];
-    [archiver encodeObject:[NSNumber numberWithInt:sendTransactionID++]];
+    [archiver encodeObject:[NSNumber numberWithInt:++sendTransactionID]];
     [archiver encodeUnsignedChar:kAMF0NullType];
-    return [archiver data];
+    NSMutableArray *array=[NSMutableArray new];
+    [array addObject:[archiver data]];
+    [array addObject:[NSNumber numberWithInt:sendTransactionID]];
+    return array;
 }
 /**
  *  用于拼装RTMP checkbw命令的AMF0数据结构
@@ -293,7 +293,7 @@ static int sendTransactionID=1;
      |命令对象 | Object | 键值对的命令信息 |
      */
     [archiver encodeObject:@"_checkbw"];
-    [archiver encodeObject:[NSNumber numberWithInt:sendTransactionID++]];
+    [archiver encodeObject:[NSNumber numberWithInt:++sendTransactionID]];
     [archiver encodeUnsignedChar:kAMF0NullType];
     return [archiver data];
 }
@@ -316,6 +316,7 @@ static int sendTransactionID=1;
      */
     [archiver encodeObject:@"deleteStream"];
     [archiver encodeObject:[NSNumber numberWithInt:sendTransactionID++]];
+    [archiver encodeUnsignedChar:kAMF0NullType];
     [archiver encodeObject:[NSNumber numberWithInt:streamID]];
     sendTransactionID=1;
     return [archiver data];
@@ -340,7 +341,7 @@ static int sendTransactionID=1;
      |流类型 | String | live |
      */
     [archiver encodeObject:@"publish"];
-    [archiver encodeObject:[NSNumber numberWithInt:sendTransactionID++]];
+    [archiver encodeObject:[NSNumber numberWithInt:++sendTransactionID]];
     [archiver encodeUnsignedChar:kAMF0NullType];
     [archiver encodeObject:streamName];
     [archiver encodeObject:@"live"];
@@ -365,10 +366,9 @@ static int sendTransactionID=1;
      |流名 | String | streamName |
      */
     [archiver encodeObject:@"FCUnpublish"];
-    [archiver encodeObject:[NSNumber numberWithInt:sendTransactionID++]];
+    [archiver encodeObject:[NSNumber numberWithInt:++sendTransactionID]];
     [archiver encodeUnsignedChar:kAMF0NullType];
     [archiver encodeObject:streamName];
-    sendTransactionID=1;
     return [archiver data];
 }
 /**
@@ -427,7 +427,7 @@ static int sendTransactionID=1;
     bytes[0]=0xaf;
     //第二字节为数据包类型，0为AAC同步包，1为AAC音频数据包
     bytes[1]=0x0;
-    //接下来的两字节表示为 AudioSpecificConfig 可以参看ISO AudioSpecificConfig（ISO/IEC 14496-3）
+    //接下来的两字节表示为 AudioSpecificConfig 可以参看ISO AudioSpecificConfig（ISO/IEC 14496-3 中1.6.2.1）
     //5 bit的编码类型AAC-LC对应的值为2二进制表示为00010
     //4 bit的音频采样率441000对应的值为4二进制表示为0100,48000的值为3对应二进制为0011
     //4 bit的声道数 双声道对应的值为2二进制表示为0010
@@ -472,7 +472,7 @@ static int sendTransactionID=1;
 +(NSData *)flvVideoSequenceHeader:(LFVideoEncodeInfo *)info{
     //视频同步包包含如下内容：
     //4位的FrameType 由于采用可以seekable的avc故为1
-    //4位的codescID由于是AVC故是7
+    //4位的codescID由于是AVC(h.264)故是7
     //1字节的AVCPacketType 如果是同步包则为0如果是普通数据包则为1
     //3字节的Composition Time 如果同步包则为0
     //1字节的configurationVersion 固定为1
@@ -491,6 +491,7 @@ static int sendTransactionID=1;
     header[i++]=0x17;//FrameType和codescID
     header[i++]=0x0;//AVCPacketType 如果是同步包则为0如果是普通数据包则为1
     i+=3;//3字节的Composition Time 全为0
+    //后续为AVCDecoderConfigurationRecord的内容，参见ISO 14496-15, 5.2.4.1
     header[i++]=0x01;//configurationVersion 固定为1
     const uint8_t *sps=[info.sps bytes];
     header[i++]=sps[1];
@@ -498,13 +499,17 @@ static int sendTransactionID=1;
     header[i++]=sps[3];
     header[i++]=0xff;
     header[i++]=0xe1;
-    header[i++]=info.sps.length>>8;
-    header[i++]=info.sps.length&0xff;
+    //两字节的sps长度
+    short int spsLength=(short int)info.sps.length;
+    header[i++]=spsLength>>8;
+    header[i++]=spsLength&0xff;
     memcpy(&header[i], sps, info.sps.length);
     i+=info.sps.length;
     header[i++]=0x01;
-    header[i++]=info.pps.length>>8;
-    header[i++]=info.pps.length&0xff;
+    //两字节的pps长度
+    short int ppsLength=(short int)info.pps.length;
+    header[i++]=ppsLength>>8;
+    header[i++]=ppsLength&0xff;
     memcpy(&header[i], [info.pps bytes], info.pps.length);
     i+=info.pps.length;
     return [NSData dataWithBytes:&header length:i];
@@ -521,20 +526,120 @@ static int sendTransactionID=1;
     [data setLength:9];
     uint8_t *body=data.mutableBytes;
     if (info.isKeyFrame) {
-        body[0] = 0x17;//关键帧 codescID：0x17
+        body[0] = 0x17;//四位的fram type为1（关键帧key frame），四位的codescID为7，则组合为0x17
     } else {
-        body[0] = 0x27;//非关键帧 codescID：0x27
+        body[0] = 0x27;//四位的fram type为2（I帧 inter frame），四位的codescID为7，则组合为0x27
     }
-    body[1] = 0x01;//AVCPacketType 普通数据包则为1
+    body[1] = 0x01;//AVCPacketType 普通数据包则为1(AVC NALU)
     body[2] = 0x00;//3字节的Composition Time 全为0
     body[3] = 0x00;
     body[4] = 0x00;
-    //四字节的数据长度
+    //四字节的NALU长度
     body[5] = (info.data.length >> 24) & 0xff;
     body[6] = (info.data.length >> 16) & 0xff;
     body[7] = (info.data.length >>  8) & 0xff;
     body[8] = (info.data.length) & 0xff;
     [data appendData:info.data];
     return data;
+}
+/**
+ *  用于拼装RTMP getStreamLength命令的AMF0数据结构
+ *
+ *  @param streamName 流名
+ *
+ *  @return NSData
+ */
++(NSData *)getStreamLengthData:(NSString *)streamName{
+    AMFArchiver *archiver=[[AMFArchiver alloc] initForWritingWithMutableData:[NSMutableData data]
+                                                                    encoding:kAMF0Encoding];
+    /**
+     * FCUnpublish命令结构
+     | Field Name | Type | Description |
+     |命令名称 | String | 命令的名称. 设置成 "getStreamLength"
+     |事务ID |Number| int |
+     |命令对象 | Object | 键值对的命令信息 |
+     |流名 | String | streamName |
+     */
+    [archiver encodeObject:@"getStreamLength"];
+    [archiver encodeObject:[NSNumber numberWithInt:++sendTransactionID]];
+    [archiver encodeUnsignedChar:kAMF0NullType];
+    [archiver encodeObject:streamName];
+    return [archiver data];
+}
+/**
+ *  用于拼装RTMP play命令的AMF0数据结构
+ *
+ *  @param streamName 流名
+ *
+ *  @return NSData
+ */
++(NSData *)playData:(NSString *)streamName{
+    AMFArchiver *archiver=[[AMFArchiver alloc] initForWritingWithMutableData:[NSMutableData data]
+                                                                    encoding:kAMF0Encoding];
+    /**
+     * FCUnpublish命令结构
+     | Field Name | Type | Description |
+     |命令名称 | String | 命令的名称. 设置成 "play"
+     |事务ID |Number| int |
+     |命令对象 | Object | 键值对的命令信息 |
+     |流名 | String | streamName |
+     */
+    [archiver encodeObject:@"play"];
+    [archiver encodeObject:[NSNumber numberWithInt:++sendTransactionID]];
+    [archiver encodeUnsignedChar:kAMF0NullType];
+    [archiver encodeObject:streamName];
+    return [archiver data];
+}
+/**
+ *  用于拼装RTMP 用户控制事件的setBufferLength，这个事件在服务器开始处理流数据前发送。类型为3占两字节，事件数据的前 4 字节表示流 ID,接下来的4 字节表示缓冲区的大小(单位是毫秒)。
+ *
+ *  @param streamid 流ID
+ *  @param  buffersize 缓冲区大小
+ *  @return NSData
+ */
++(NSData *)setBufferLengthData:(uint32_t)streamId bufferSize:(uint32_t)bufferSize{
+    NSMutableData *data=[NSMutableData data];
+    [data setLength:10];
+    uint8_t *bytes=[data mutableBytes];
+    //setBufferLength在User Control Message Events对应的类型为3
+    bytes[0]=0x0;
+    bytes[1]=0x3;
+    bytes[2]=0x0|(streamId>>24);
+    bytes[3]=0x0|(streamId>>16);
+    bytes[4]=0x0|(streamId>>8);
+    bytes[5]=0x0|streamId;
+    bytes[6]=0x0|(bufferSize>>24);
+    bytes[7]=0x0|(bufferSize>>16);
+    bytes[8]=0x0|(bufferSize>>8);
+    bytes[9]=0x0|bufferSize;
+    return data;
+
+}
+/**
+ *  用于拼装RTMP pause命令的AMF0数据结构
+ *
+ *  @param isFlag 暂停流还是继续
+ *  @param milliSeconds 流暂停或者继续播放的毫秒数
+ 
+ *  @return NSData
+ */
++(NSData *)pauseData:(BOOL)isFlag milliSeconds:(int)milliSeconds{
+    AMFArchiver *archiver=[[AMFArchiver alloc] initForWritingWithMutableData:[NSMutableData data]
+                                                                    encoding:kAMF0Encoding];
+    /**
+     * pause命令结构
+     | Field Name | Type | Description |
+     |命令名称 | String | 命令的名称. 设置成 "pause"
+     |事务ID |Number| int |
+     |命令对象 | Object | 键值对的命令信息 |
+     |Pause/Unpause | Boolean | 暂停流还是继续 |
+     |milliSeconds | Number | 流暂停或者继续播放的毫秒数|
+     */
+    [archiver encodeObject:@"pause"];
+    [archiver encodeObject:[NSNumber numberWithInt:++sendTransactionID]];
+    [archiver encodeUnsignedChar:kAMF0NullType];
+    [archiver encodeBool:isFlag];
+    [archiver encodeObject:[NSNumber numberWithInt:milliSeconds]];
+    return [archiver data];
 }
 @end

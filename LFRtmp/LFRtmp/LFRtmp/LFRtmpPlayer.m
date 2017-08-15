@@ -10,173 +10,77 @@
 #define RTMP_HANDSHAKE_BITSIZE 1536
 #define LFRTMPSERVICE_LOCK dispatch_semaphore_wait(_semaphore, DISPATCH_TIME_FOREVER);
 #define LFRTMPSERVICE_UNLOCK dispatch_semaphore_signal(_semaphore);
-#import "LFRtmpService.h"
+#import "LFRtmpPlayer.h"
 #import <netinet/in.h>
 #import <arpa/inet.h>
 #import <netdb.h>
 #import <netinet/tcp.h>
 #import "LFRtmpChunkFormat.h"
 #import "LFRtmpUrlParser.h"
-#import "LFMicDevice.h"
-#import "LFAACEncode.h"
-#import "LFVideoHardEncode.h"
-#import "LFVideoSoftEncode.h"
 #import "LFRTMPReadBuffer.h"
-@interface LFRtmpService()<LFMicDeviceDelegate,LFCameraDeviceDelegate,LFVideoEncodeDelegate>
-@property (assign,nonatomic) BOOL isSending;
+#import "LFPlayConfig.h"
+#import "LFAudioDataParser.h"
+#import "LFVideoDataParser.h"
+#import "MCAudioOutputQueue.h"
+#import "LFVideoPacketData.h"
+#import "LFVideoDecode.h"
+#import "AAPLEAGLLayer.h"
+@interface LFRtmpPlayer()<LFVideoDecodeDelegate>
 @end
-@implementation LFRtmpService
+@implementation LFRtmpPlayer
 {
     int _socket;//socket通道描述符
     dispatch_queue_t _qunue;
     dispatch_semaphore_t _semaphore;
     LFRtmpChunkFormat *_rtmpChunkFormat;
-    BOOL _isImmediatelyQuitListen;
-    BOOL _isPublishReady;
+    BOOL _isPlayReady;
     BOOL _isSocketConnect;
-    BOOL _isSendFlvAACSequenceHeader;
-    BOOL _isSendFlvVideoSequenceHeader;
+    BOOL _isListenSocket;
     int _streamID;
-    NSMutableArray *_mediaSendBuffers;
-    LFMicDevice *_micDivice;
-    LFAACEncode *_aacEncode;
-    LFCameraDevice *_cameraDevice;
-    id<LFVideoEncodeProtocol> _videoEncode;
     int _createStreamTransactionId;//createStream对应的事务id
+    LFPlayConfig *_playConfig;
+    MCAudioOutputQueue *_audioOutputQueue;
+    LFVideoDecode *_videoDecode;
+    AAPLEAGLLayer *_glLayer;
 }
-+ (id)sharedInstance{
-    static LFRtmpService *instance=nil;
-    static dispatch_once_t onceToken;
-    dispatch_once(&onceToken, ^{
-        instance = [[LFRtmpService alloc] init];
-    });
-    return instance;
-}
+
 /**
  *  初始化
  *
- *  @param videoConfig 视频配置信息
- *  @param audioConfig 音频配置信息
- *
  *  @return self
  */
--(void)setupWithVideoConfig:(LFVideoConfig *)videoConfig
-                audioConfig:(LFAudioConfig *)audioConfig
-                    preview:(UIView *)preview{
-    if(!_qunue){
+-(instancetype)initWitPreview:(UIView *)preview{
+    self=[super init];
+    if(self){
         _qunue=dispatch_queue_create("LFRtmpServer.Qunue", DISPATCH_QUEUE_SERIAL);
         _semaphore=dispatch_semaphore_create(1);
+        _isPlayReady=NO;
+        _isSocketConnect=NO;
+        _isListenSocket=NO;
+        _rtmpChunkFormat=[[LFRtmpChunkFormat alloc] init];
+        _createStreamTransactionId=-1;
+        _playConfig=[[LFPlayConfig alloc] init];
+        _glLayer = [[AAPLEAGLLayer alloc] initWithFrame:preview.bounds];
+        [preview.layer addSublayer:_glLayer];
     }
-    if(_mediaSendBuffers){
-        [_mediaSendBuffers removeAllObjects];
-    }else{
-        _mediaSendBuffers=[NSMutableArray new];
-    }
-    _isPublishReady=NO;
-    _isSocketConnect=NO;
-    _isSending=NO;
-    _rtmpChunkFormat=[[LFRtmpChunkFormat alloc] init];
-    _audioConfig=audioConfig;
-    _preview=preview;
-    [self setVideoConfig:videoConfig];
-    _createStreamTransactionId=-1;
-    [[NSNotificationCenter defaultCenter] addObserver:self
-                                             selector:@selector(clearBuffer)
-                                                 name:UIApplicationDidReceiveMemoryWarningNotification
-                                               object:nil];
-}
-/**
- *  方向
- */
--(void)setOrientation:(UIInterfaceOrientation)orientation{
-    _orientation=orientation;
-    _cameraDevice.orientation=orientation;
-}
-/**
- *  是否打开闪光灯
- */
--(void)setIsOpenFlash:(BOOL)isOpenFlash{
-    _cameraDevice.isOpenFlash=isOpenFlash;
-    _isOpenFlash=isOpenFlash;
-}
-/**
- *  摄像头选取
- */
--(void)setDevicePosition:(AVCaptureDevicePosition)devicePosition{
-    _cameraDevice.devicePosition=devicePosition;
-    _devicePosition=devicePosition;
-}
-/**
- *  配置视频属性
- */
--(void)setVideoConfig:(LFVideoConfig *)videoConfig{
-    _videoConfig=videoConfig;
-    _isLandscape=videoConfig.isLandscape;
-    [self configDevice];
-}
-/**
- *  焦距调整
- */
--(void)setVideoZoomScale:(CGFloat)zoomScale andError:(void (^)())errorBlock{
-    [_cameraDevice setVideoZoomScale:zoomScale andError:^{
-        if(errorBlock){
-            errorBlock();
-        }
-    } andfinish:^{
-        _zoomScale=zoomScale;
-    }];
-}
-/**
- *  手动对焦
- *
- *  @param point 焦点位置
- */
--(void)setFocusPoint:(CGPoint)point{
-    [_cameraDevice setFocusPoint:point];
-}
-/**
- *  设置对焦模式
- *
- *  @param focusMode 对焦模式，默认系统采用系统设备采用的是持续自动对焦模型AVCaptureFocusModeContinuousAutoFocus
- */
--(void)setFocusMode:(AVCaptureFocusMode)focusMode{
-    [_cameraDevice setFocusMode:focusMode];
-}
-/**
- *  当前摄像头是否支持手动对焦
- */
--(BOOL)isSupportFocusPoint{
-    return [_cameraDevice isSupportFocusPoint];
-}
-/**
- *  滤镜 默认使用美颜效果 可使用GPUImage的定义的滤镜效果，也可基于GPUImage实现自定义滤镜
- */
--(void)setFilterType:(LFCameraDeviceFilter)filterType{
-    _filterType=filterType;
-    [_cameraDevice setFilterType:filterType];
-}
-/**
- *  水印
- */
--(void)setLogoView:(UIView *)logoView{
-    [_cameraDevice setLogoView:logoView];
-    _logoView=logoView;
+    return self;
 }
 /**
  *  启动连接
  */
--(void)start{
+-(void)play{
     __weak __typeof(self)weakSelf = self;
     dispatch_async(_qunue, ^{
         __strong __typeof(weakSelf)strongSelf = weakSelf;
         while (![self connect:_urlParser.domain port:_urlParser.port]) {
             dispatch_async(dispatch_get_main_queue(), ^{
-                if(strongSelf.delegate&&[strongSelf.delegate respondsToSelector:@selector(onRtmpStatusChange:message:)]){
-                    [strongSelf.delegate onRtmpStatusChange:LFRTMPStatusConnectionFail message:nil];
+                if(strongSelf.delegate&&[strongSelf.delegate respondsToSelector:@selector(onRtmpPlayStatusChange:)]){
+                    [strongSelf.delegate onRtmpPlayStatusChange:LFRTMPPlayStatusConnectionFail];
                 }
             });
-            [[NSRunLoop currentRunLoop] runUntilDate:[NSDate dateWithTimeIntervalSinceNow:0.5f]];
+            [[NSRunLoop currentRunLoop] runUntilDate:[NSDate dateWithTimeIntervalSinceNow:0.01f]];
         }
+        _isListenSocket=YES;
         [strongSelf listenSocketRecv];
     });
 }
@@ -185,47 +89,83 @@
  *  重新连接
  */
 -(void)reStart{
-    __weak __typeof(self)weakSelf = self;
-    dispatch_async(_qunue, ^{
-        __strong __typeof(weakSelf)strongSelf = weakSelf;
-        [strongSelf closeRtmp];
-    });
-    [self start];
+    [self closeRtmp];
+    [self play];
 }
 /**
- *  停止推流，重置状态，删除推流 关闭socket连接
+ *  暂停播放
+ */
+-(void)pause{
+    __weak __typeof(self)weakSelf = self;
+    dispatch_async(dispatch_get_main_queue(), ^{
+        __strong __typeof(weakSelf)strongSelf = weakSelf;
+        if(strongSelf.delegate&&[strongSelf.delegate respondsToSelector:@selector(onRtmpPlayStatusChange:)]){
+            [strongSelf.delegate onRtmpPlayStatusChange:LFRTMPPlayStatusResumeSending];
+        }
+    });
+    NSData *data=[_rtmpChunkFormat pauseChunkFormat:YES milliSeconds:_rtmpChunkFormat.currentTimestamp];
+    if(data.length){
+        if([self write:(char *)[data bytes] length:(int)data.length isPacket:YES]){
+            NSLog(@"--------------RTMP：发送pause成功！--------------");
+            dispatch_async(dispatch_get_main_queue(), ^{
+                __strong __typeof(weakSelf)strongSelf = weakSelf;
+                if(strongSelf.delegate&&[strongSelf.delegate respondsToSelector:@selector(onRtmpPlayStatusChange:)]){
+                    [strongSelf.delegate onRtmpPlayStatusChange:LFRTMPPlayStatusResumeSuccess];
+                }
+            });
+        }else{
+            NSLog(@"--------------RTMP：发送pause失败！--------------");
+            dispatch_async(dispatch_get_main_queue(), ^{
+                __strong __typeof(weakSelf)strongSelf = weakSelf;
+                if(strongSelf.delegate&&[strongSelf.delegate respondsToSelector:@selector(onRtmpPlayStatusChange:)]){
+                    [strongSelf.delegate onRtmpPlayStatusChange:LFRTMPPlayStatusResumeFail];
+                }
+            });
+        }
+    }
+}
+/**
+ *  继续播放
+ */
+-(void)resume{
+    __weak __typeof(self)weakSelf = self;
+    dispatch_async(dispatch_get_main_queue(), ^{
+        __strong __typeof(weakSelf)strongSelf = weakSelf;
+        if(strongSelf.delegate&&[strongSelf.delegate respondsToSelector:@selector(onRtmpPlayStatusChange:)]){
+            [strongSelf.delegate onRtmpPlayStatusChange:LFRTMPPlayStatusPauseSending];
+        }
+    });
+    NSData *data=[_rtmpChunkFormat pauseChunkFormat:NO milliSeconds:_rtmpChunkFormat.currentTimestamp];
+    if(data.length){
+        if([self write:(char *)[data bytes] length:(int)data.length isPacket:YES]){
+            NSLog(@"--------------RTMP：发送resume成功！--------------");
+            dispatch_async(dispatch_get_main_queue(), ^{
+                __strong __typeof(weakSelf)strongSelf = weakSelf;
+                if(strongSelf.delegate&&[strongSelf.delegate respondsToSelector:@selector(onRtmpPlayStatusChange:)]){
+                    [strongSelf.delegate onRtmpPlayStatusChange:LFRTMPPlayStatusPauseSuccess];
+                }
+            });
+        }else{
+            NSLog(@"--------------RTMP：发送resume失败！--------------");
+            dispatch_async(dispatch_get_main_queue(), ^{
+                __strong __typeof(weakSelf)strongSelf = weakSelf;
+                if(strongSelf.delegate&&[strongSelf.delegate respondsToSelector:@selector(onRtmpPlayStatusChange:)]){
+                    [strongSelf.delegate onRtmpPlayStatusChange:LFRTMPPlayStatusPauseFail];
+                }
+            });
+        }
+    }
+}
+/**
+ *  停止play，重置状态，删除推流 关闭socket连接
  */
 -(void)stop{
-    __weak __typeof(self)weakSelf = self;
-    dispatch_async(_qunue, ^{
-        __strong __typeof(weakSelf)strongSelf = weakSelf;
-        if(_isPublishReady){
-            [strongSelf sendFcUnPublish];
-        }
-        if(_streamID>0){
-            [strongSelf sendDeleteStream];
-        }
-        [strongSelf closeRtmp];
-    });
-    
-}
-/**
- *  退出
- */
--(void)quit{
-    __weak __typeof(self)weakSelf = self;
-    dispatch_async(_qunue, ^{
-        __strong __typeof(weakSelf)strongSelf = weakSelf;
-        if(_isPublishReady){
-            [strongSelf sendFcUnPublish];
-        }
-        if(_streamID>0){
-            [strongSelf sendDeleteStream];
-        }
-        [strongSelf closeRtmp];
-        [strongSelf stopRecord];
-        [strongSelf resetProperty];
-    });
+    [self pause];
+    [self sendFcUnPublish];
+    if(_streamID>0){
+        [self sendDeleteStream];
+    }
+    [self closeRtmp];
 }
 /**
  *  关闭rtmp资源
@@ -235,30 +175,8 @@
     _socket=-1;
     _isSocketConnect=NO;
     LFRTMPSERVICE_LOCK
-    _isSendFlvAACSequenceHeader=NO;
-    _isSendFlvVideoSequenceHeader=NO;
-    _isSending=NO;
-    _isPublishReady=NO;
-    [_mediaSendBuffers removeAllObjects];
-    LFRTMPSERVICE_UNLOCK
-}
-/***
- *  重置属性
- */
--(void)resetProperty{
-    _cameraDevice.orientation=UIInterfaceOrientationUnknown;
-    _logoView=nil;
-    _filterType=LFCameraDeviceFilter_Original;
-    _zoomScale=0;
-    _devicePosition=AVCaptureDevicePositionUnspecified;
-    _isOpenFlash=NO;
-}
-/**
- *  清理待发送数据
- */
--(void)clearBuffer{
-    LFRTMPSERVICE_LOCK
-    [_mediaSendBuffers removeAllObjects];
+    _isPlayReady=NO;
+    _isListenSocket=NO;
     LFRTMPSERVICE_UNLOCK
 }
 /**
@@ -298,7 +216,6 @@
 -(BOOL)connetSocket:(NSString *)hostname port:(int)port{
     close(_socket);
     _socket=-1;
-    _isSocketConnect=NO;
     NSString *portStr = [NSString stringWithFormat:@"%d", port];
     struct addrinfo hints, *res, *res0;
     memset(&hints, 0, sizeof(hints));
@@ -567,120 +484,6 @@
     }
 }
 /**
- *  写音视频数据
- *
- *  @param buffer 待写数据
- *  @param n      待写数据长度
- *
- *  @return 是否写成功
- */
--(void)writeMediaData{
-    if(_mediaSendBuffers.count>0&&_socket!=-1){
-        LFRTMPSERVICE_LOCK
-        _isSending=YES;
-        NSMutableData *data=[_mediaSendBuffers firstObject];
-        LFRTMPSERVICE_UNLOCK
-        uint8_t *dataBytes=[data mutableBytes];
-        //通过首字节获取header基本信息
-        LFRtmpBasicHeader *basicHeader=[LFRtmpBasicHeader basicHeader:dataBytes[0]];
-        int rtmpHeaderLength=-1;
-        switch (basicHeader.fmtType) {
-            case LFRtmpBasicHeaderFmtLarge:
-            {
-                rtmpHeaderLength=12;
-            }
-                break;
-            case LFRtmpBasicHeaderFmtMedium:
-            {
-                rtmpHeaderLength=8;
-            }
-                break;
-            case LFRtmpBasicHeaderFmtSmall:
-            {
-                rtmpHeaderLength=4;
-            }
-                break;
-            default:
-                break;
-        }
-        if(rtmpHeaderLength==-1){
-            NSLog(@"--------------RTMP：待发送音视频数据头错误！--------------");
-            return;
-        }
-        //有扩展时间戳，则数据头中包含四字节的扩展数据
-        if(dataBytes[1]==0x1&&dataBytes[2]==0x1&&dataBytes[3]==0x1){
-            rtmpHeaderLength+=4;
-        }
-        BOOL isReConnect=NO;
-        int chunkSize=_rtmpChunkFormat.outChunkSize;
-        int count=ceil((data.length-rtmpHeaderLength)/(chunkSize+0.0));
-        //拆分数据将大数据拆分为小的chunk块
-        for(int i=0;i<count;i++){
-            NSMutableData *chunkData=[NSMutableData data];
-            if(i==count-1){
-                [chunkData setLength:(data.length-rtmpHeaderLength-i*chunkSize)];
-                uint8_t *buffer=[chunkData mutableBytes];
-                for(int j=0;j<(data.length-rtmpHeaderLength-i*chunkSize);j++){
-                    buffer[j]=dataBytes[i*chunkSize+j+rtmpHeaderLength];
-                }
-            }else{
-                [chunkData setLength:chunkSize];
-                uint8_t *buffer=[chunkData mutableBytes];
-                for(int j=0;j<chunkSize;j++){
-                    buffer[j]=dataBytes[i*chunkSize+j+rtmpHeaderLength];
-                }
-            }
-            NSMutableData *sendPacketData=[NSMutableData new];
-            if(i==0){
-                [sendPacketData setLength:rtmpHeaderLength];
-                uint8_t *packetBytes=[sendPacketData mutableBytes];
-                //设置头数据
-                for(int k=0;k<rtmpHeaderLength;k++){
-                    packetBytes[k]=dataBytes[k];
-                }
-                //追加chunk数据
-                [sendPacketData appendData:chunkData];
-            }else{
-                [sendPacketData setLength:1];
-                uint8_t *packetBytes=[sendPacketData mutableBytes];
-                //加包分隔符，如果在发送大于chunk size的包时如果没有加分隔符或者分隔符不正确
-                //则会被服务器将socket的状态设置为EPIPE Broken pipe，导致频繁重连
-                packetBytes[0]=[LFRtmpChunkFormat chunkPacketSplitChar:basicHeader.chunkStreamID];
-                //追加chunk数据
-                [sendPacketData appendData:chunkData];
-            }
-            NSUInteger n=sendPacketData.length;
-            while (n>0) {
-                ssize_t bytes=send(_socket, [sendPacketData mutableBytes], n, 0);
-                if(bytes<0){
-                    //如果是被系统呼叫中断如有电话进来则继续发送
-                    if(errno==EINTR){
-                        continue;
-                    }else{
-                        isReConnect=YES;
-                        break;
-                    }
-                }else if(bytes==0){
-                    break;
-                }else{
-                    n-=bytes;
-                }
-            }
-            if(isReConnect){
-                break;
-            }
-        }
-        LFRTMPSERVICE_LOCK
-        if(isReConnect){
-            //重连
-            [self reStart];
-        }
-        _isSending=NO;
-        [_mediaSendBuffers removeObject:data];
-        LFRTMPSERVICE_UNLOCK
-    }
-}
-/**
  *  读数据 在执行recv方法时当前线程阻塞，直到读取到数据或者超时
  *
  *  @param readBuf
@@ -703,27 +506,26 @@
                 isReadSucc=NO;
                 break;
             }
-        }else if(bytes==0){
-            NSLog(@"--------------RTMP：未读取到任何数据！--------------");
-            break;
-        }else{
+        }else if(bytes>0){
             [readBuf appendData:[NSData dataWithBytes:buffer length:bytes]];
             n=readBuf.expectedSize-[readBuf size];
+        }else{
+            NSLog(@"--------------RTMP：未读取到数据！--------------");
+            isReadSucc=NO;
+            break;
         }
     }
     return isReadSucc;
 }
 /**
- *  监听socket的响应直到可以推流为止
+ *  监听socket的响应
  */
 -(void)listenSocketRecv{
     LFRTMPReadBuffer *buffer=[LFRTMPReadBuffer new];
     LFRtmpBasicHeader *preBasicHeader=nil;
-    _isImmediatelyQuitListen=NO;
-    while (!_isPublishReady&&!_isImmediatelyQuitListen) {
+    while (_isListenSocket) {
         buffer.expectedSize=1;
         if([self read:buffer]){
-            BOOL isParseSuccess=YES;
             NSData *data=[buffer getExpectedBuffer:buffer.expectedSize];
             if(data){
                 const char *byte=[data bytes];
@@ -752,8 +554,8 @@
                         default:
                             break;
                     }
+                    //获取header的主体信息
                     if([self read:buffer]){
-                        //获取header的主体信息
                         data=[buffer getExpectedBuffer:buffer.expectedSize];
                         if(data){
                             switch (basicHeader.fmtType) {
@@ -769,11 +571,7 @@
                                             if(extendDate){
                                                 LFRtmpExtendedTimestamp *extendedTimestamp=[LFRtmpExtendedTimestamp extendedTimestamp:extendDate];
                                                 msgHeader.extendTimestamp=extendedTimestamp;
-                                            }else{
-                                                isParseSuccess=NO;
                                             }
-                                        }else{
-                                            isParseSuccess=NO;
                                         }
                                     }
                                     basicHeader.messageHeader=msgHeader;
@@ -791,11 +589,7 @@
                                             if(extendDate){
                                                 LFRtmpExtendedTimestamp *extendedTimestamp=[LFRtmpExtendedTimestamp extendedTimestamp:extendDate];
                                                 msgHeader.extendTimestamp=extendedTimestamp;
-                                            }else{
-                                                isParseSuccess=NO;
                                             }
-                                        }else{
-                                            isParseSuccess=NO;
                                         }
                                     }
                                     //补齐缺失的信息
@@ -817,11 +611,7 @@
                                             if(extendDate){
                                                 LFRtmpExtendedTimestamp *extendedTimestamp=[LFRtmpExtendedTimestamp extendedTimestamp:extendDate];
                                                 msgHeader.extendTimestamp=extendedTimestamp;
-                                            }else{
-                                                isParseSuccess=NO;
                                             }
-                                        }else{
-                                            isParseSuccess=NO;
                                         }
                                     }
                                     //补齐缺失的信息
@@ -847,7 +637,7 @@
                             //读取chunk data数据
                             if(basicHeader.messageHeader.length>0){
                                 //获取chunk data 分隔符的数量
-                                int chunkPacketSplitNum=ceil(basicHeader.messageHeader.length/[_rtmpChunkFormat inChunkSize]);
+                                int chunkPacketSplitNum=ceil(basicHeader.messageHeader.length/_rtmpChunkFormat.inChunkSize);
                                 buffer.expectedSize=chunkPacketSplitNum+basicHeader.messageHeader.length;
                                 if([self read:buffer]){
                                     NSData *chunk=[buffer getExpectedBuffer:buffer.expectedSize];
@@ -859,7 +649,6 @@
                                             uint8_t byte=chunkBytes[0];
                                             if(byte!=0x2){
                                                 NSLog(@"--------------RTMP：调用listenSocketRecv失败，命令消息的首字节必须为0x2！--------------");
-                                                isParseSuccess=NO;
                                             }
                                         }
                                         if(chunk.length<=_rtmpChunkFormat.inChunkSize){
@@ -883,29 +672,14 @@
                                             basicHeader.chunkData=[[LFRtmpChunkData alloc] init:chunkData];
                                         }
                                         [self handChunkData:basicHeader];
-                                    }else{
-                                        isParseSuccess=NO;
                                     }
-                                }else{
-                                    isParseSuccess=NO;
                                 }
                             }
-                        }else{
-                            isParseSuccess=NO;
                         }
-
-                    }else{
-                        isParseSuccess=NO;
                     }
-                }else{
-                    isParseSuccess=NO;
+
                 }
             }
-            if(!isParseSuccess){
-                break;
-            }
-        }else{
-            break;
         }
         [[NSRunLoop currentRunLoop] runUntilDate:[NSDate dateWithTimeIntervalSinceNow:0.01f]];
     }
@@ -956,52 +730,106 @@
                 if(command.optionObject&&command.getOptionObjectDictionary){
                     NSString *code=[command optionObjectValueForKey:@"code"];
                     if([code isEqualToString:kLFRtmpConnectSuccess]){
-                        [self sendReleaseStream];
-                        [self sendFCPublish];
                         [self sendCreateStream];
-                        [self sendCheckBindWidth];
                     }
                 }
-                if(command.transactionID==_createStreamTransactionId&&command.optionObject&&[command.optionObject isKindOfClass:[NSNumber class]]){
-                    _streamID=[(NSNumber *)command.optionObject intValue];
-                    [self sendPublishStream];
+                if(command.optionObject&&[command.optionObject isKindOfClass:[NSNumber class]]){
+                    if(command.transactionID==_createStreamTransactionId){
+                        _streamID=[(NSNumber *)command.optionObject intValue];
+                        [self sendCheckBindWidth];
+                        [self getStreamLength];
+                        [self playStream];
+                        //[self setBufferLength];
+                    }
                 }
             }else if(command.commandType==LFRtmpResponseCommandOnStatus){
                 if(command.optionObject&&command.getOptionObjectDictionary){
                     NSString *code=[command optionObjectValueForKey:@"code"];
                     __weak __typeof(self)weakSelf = self;
-                    if([code isEqualToString:kLFRtmpPublishStart]){
-                        [self sendSetDataFrame];
+                    if([code isEqualToString:kLFRtmpPlayStart]||[code isEqualToString:kLFRtmpPlayReset]){
                         LFRTMPSERVICE_LOCK
-                        _isPublishReady=YES;
+                        _isPlayReady=YES;
                         LFRTMPSERVICE_UNLOCK
-                        NSLog(@"--------------RTMP：解析publish响应成功！推流准备就绪！！--------------");
+                        NSLog(@"--------------RTMP：正确响应play命令，播放准备就绪！！--------------");
                         dispatch_async(dispatch_get_main_queue(), ^{
                             __strong __typeof(weakSelf)strongSelf = weakSelf;
-                            if(strongSelf.delegate&&[strongSelf.delegate respondsToSelector:@selector(onRtmpStatusChange:message:)]){
-                                [strongSelf.delegate onRtmpStatusChange:LFRTMPStatusPublishReady message:nil];
-                            }
-                        });
-                    }else{
-                        NSLog(@"--------------RTMP：publish响应异常！--------------");
-                        LFRTMPSERVICE_LOCK
-                        _isPublishReady=NO;
-                        _isImmediatelyQuitListen=YES;
-                        LFRTMPSERVICE_UNLOCK
-                        dispatch_async(dispatch_get_main_queue(), ^{
-                            __strong __typeof(weakSelf)strongSelf = weakSelf;
-                            if(strongSelf.delegate&&[strongSelf.delegate respondsToSelector:@selector(onRtmpStatusChange:message:)]){
-                                NSString *code=[command optionObjectValueForKey:@"code"];
-                                if([code isEqualToString:kLFRtmpPublishBadName]){
-                                    [strongSelf.delegate onRtmpStatusChange:LFRTMPStatusPublishFailBadName
-                                                                    message:[command allData]];
-                                }else{
-                                    [strongSelf.delegate onRtmpStatusChange:LFRTMPStatusPublishFail
-                                                                    message:[command allData]];
-                                }
+                            if(strongSelf.delegate&&[strongSelf.delegate respondsToSelector:@selector(onRtmpPlayStatusChange:)]){
+                                [strongSelf.delegate onRtmpPlayStatusChange:LFRTMPPlayStatusPlayReady];
                             }
                         });
                     }
+                    if([code isEqualToString:kLFRtmpPlayStreamNotFound]){
+                        NSLog(@"--------------RTMP：播放失败！要播放的流%@不存在--------------",_urlParser.streamName);
+                        LFRTMPSERVICE_LOCK
+                        _isListenSocket=NO;
+                        LFRTMPSERVICE_UNLOCK
+                        dispatch_async(dispatch_get_main_queue(), ^{
+                            __strong __typeof(weakSelf)strongSelf = weakSelf;
+                            if(strongSelf.delegate&&[strongSelf.delegate respondsToSelector:@selector(onRtmpPlayStatusChange:)]){
+                                [strongSelf.delegate onRtmpPlayStatusChange:LFRTMPPlayStatusPlayFail];
+                            }
+                        });
+                    }
+                }
+            }
+        }
+            break;
+        case LFRtmpAudioMessage:
+        {
+            if(basicHeader.chunkData.data.length>=2){
+                const char * bytes=[basicHeader.chunkData.data bytes];
+                //音频同步包
+                if(bytes[1]==0x0){
+                    if([LFAudioDataParser parseAudioSequenceHeader:basicHeader.chunkData.data withConfig:_playConfig]){
+                        if(_audioOutputQueue==nil){
+                            _audioOutputQueue=[[MCAudioOutputQueue alloc] initWithFormat:[_playConfig getAudioStreamBasicDescription] bufferSize:1024 macgicCookie:nil];
+                        }
+                    }
+                }else{
+                    //音频数据包
+                    NSUInteger aacDataLength=[LFAudioDataParser parseAudioData:basicHeader.chunkData.data].length;
+                    NSMutableData *data=[NSMutableData dataWithData:[_playConfig getAACADTS:aacDataLength]];
+                    [data appendData:[LFAudioDataParser parseAudioData:basicHeader.chunkData.data]];
+                    if(data.length>0){
+                        AudioStreamPacketDescription des={0};
+                        des.mDataByteSize=(UInt32)data.length-kLFPlayConfigADTSLength;
+                        des.mVariableFramesInPacket=0;
+                        des.mStartOffset=kLFPlayConfigADTSLength;
+                        [_audioOutputQueue playData:data packetCount:1 packetDescriptions:&des isEof:NO];
+                    }
+                }
+            }
+        }
+            break;
+        case LFRtmpVideoMessage:
+        {
+            if(basicHeader.chunkData.data.length>=2){
+                const char * bytes=[basicHeader.chunkData.data bytes];
+                //AVCPacketType 如果是同步包则为0如果是普通数据包则为1
+                if(bytes[1]==0x0){
+                    if([LFVideoDataParser parseVideoSequenceHeader:basicHeader.chunkData.data withConfig:_playConfig]){
+
+                    }
+                }else{
+                    if(_videoDecode==nil){
+                        _videoDecode=[[LFVideoDecode alloc] init:_playConfig];
+                        _videoDecode.delegate=self;
+                    }
+                    //视频数据包
+                    LFVideoPacketData *videoPacket=[LFVideoDataParser parseVideoData:basicHeader.chunkData.data];
+                    [_videoDecode decode:videoPacket];                    
+                }
+            }
+        }
+            break;
+        case LFRtmpDataMessage:
+        {
+            LFRtmpResponseCommand *command=[basicHeader.chunkData parseCommand];
+            if(command.commandType==LFRtmpResponseCommandOnMetaData){
+                if(command.allData&&command.allData.count>0&&[[command.allData firstObject] isKindOfClass:[NSDictionary class]]){
+                    NSDictionary *playParam=[command.allData firstObject];
+                    [_playConfig setValuesForKeysWithDictionary:playParam];
+                    NSLog(@"--------------RTMP：成功获取OnMetaData配置播放参数--------------");
                 }
             }
         }
@@ -1023,32 +851,7 @@
         return NO;
     }
 }
-/**
- *  释放流
- */
--(void)sendReleaseStream{
-    NSData *data=[_rtmpChunkFormat releaseStreamChunkFormat:_urlParser.streamName];
-    if(data.length){
-        if([self write:(char *)[data bytes] length:(int)data.length isPacket:YES]){
-            NSLog(@"--------------RTMP：发送sendReleaseStream成功！--------------");
-        }else{
-            NSLog(@"--------------RTMP：发送sendReleaseStream失败！--------------");
-        }
-    }
-}
-/**
- *  取消推流
- */
--(void)sendFCPublish{
-    NSData *data=[_rtmpChunkFormat fcPublishStreamChunkFormat:_urlParser.streamName];
-    if(data.length){
-        if([self write:(char *)[data bytes] length:(int)data.length isPacket:YES]){
-            NSLog(@"--------------RTMP：发送FCPublish成功！--------------");
-        }else{
-            NSLog(@"--------------RTMP：发送FCPublish失败！--------------");
-        }
-    }
-}
+
 /**
  *  创建流
  */
@@ -1090,46 +893,7 @@
         }
     }
 }
-/**
- *  推流
- */
--(void)sendPublishStream{
-    __weak __typeof(self)weakSelf = self;
-    dispatch_async(dispatch_get_main_queue(), ^{
-        __strong __typeof(weakSelf)strongSelf = weakSelf;
-        if(strongSelf.delegate&&[strongSelf.delegate respondsToSelector:@selector(onRtmpStatusChange:message:)]){
-            [strongSelf.delegate onRtmpStatusChange:LFRTMPStatusPublishSending message:nil];
-        }
-    });
-    NSData *data=[_rtmpChunkFormat publishStreamChunkFormat:_urlParser.streamName];
-    if(data.length){
-        if([self write:(char *)[data bytes] length:(int)data.length isPacket:YES]){
-            NSLog(@"--------------RTMP：发送publish成功！--------------");
-        }else{
-            NSLog(@"--------------RTMP：发送publish失败！--------------");
-            dispatch_async(dispatch_get_main_queue(), ^{
-                __strong __typeof(weakSelf)strongSelf = weakSelf;
-                if(strongSelf.delegate&&[strongSelf.delegate respondsToSelector:@selector(onRtmpStatusChange:message:)]){
-                    [strongSelf.delegate onRtmpStatusChange:LFRTMPStatusPublishFail message:nil];
-                }
-            });
-        }
-    }
-}
-/**
- *  发送元数据
- */
--(void)sendSetDataFrame{
-    NSData *data=[_rtmpChunkFormat setDataFrameChunkFormat:_videoConfig
-                                               audioConfig:_audioConfig];
-    if(data.length){
-        if([self write:(char *)[data bytes] length:(int)data.length isPacket:YES]){
-            NSLog(@"--------------RTMP：发送元数据metadata成功！--------------");
-        }else{
-            NSLog(@"--------------RTMP：发送元数据metadata失败！--------------");
-        }
-    }
-}
+
 /**
  *  fcUnPublish
  */
@@ -1145,147 +909,74 @@
     }
 }
 /**
- *  发送音频数据包
+ *  getStreamLength
  */
--(void)sendAudioPacket:(NSData *)data{
-    if(!_isSendFlvAACSequenceHeader){
-        LFRTMPSERVICE_LOCK
-        [_mediaSendBuffers addObject:[_rtmpChunkFormat flvAACSequenceHeader]];
-        _isSendFlvAACSequenceHeader=YES;
-        LFRTMPSERVICE_UNLOCK
-        if(!_isSending){
-            [self writeMediaData];
-        }
-    }
-    LFRTMPSERVICE_LOCK
-    [_mediaSendBuffers addObject:[_rtmpChunkFormat flvAACAudioData:data]];
-    LFRTMPSERVICE_UNLOCK
-    if(!_isSending){
-        [self writeMediaData];
-    }
-}
-/**
- *  发送视频数据包
- */
--(void)sendVideoPacket:(LFVideoEncodeInfo *)info{
-    if(!_isSendFlvVideoSequenceHeader){
-        LFRTMPSERVICE_LOCK
-        [_mediaSendBuffers addObject:[_rtmpChunkFormat flvVideoSequenceHeader:info]];
-        _isSendFlvVideoSequenceHeader=YES;
-        LFRTMPSERVICE_UNLOCK
-        if(!_isSending){
-            [self writeMediaData];
-        }
-    }
-    LFRTMPSERVICE_LOCK
-    [_mediaSendBuffers addObject:[_rtmpChunkFormat flvVideoData:info]];
-    LFRTMPSERVICE_UNLOCK
-    if(!_isSending){
-        [self writeMediaData];
-    }
-}
-#pragma mark device
-/**
- *  配置设备
- */
--(void)configDevice{
-    //配置音频
-    if(_micDivice){
-        [_micDivice stopOutput];
-        _micDivice.delegate=nil;
-    }
-    _micDivice=[[LFMicDevice alloc] init:_audioConfig];
-    _micDivice.delegate=self;
-    //配置AAC编码器
-    _aacEncode=[[LFAACEncode alloc] init:_audioConfig];
-    //配置视频
-    if(_cameraDevice){
-        [_cameraDevice stopOutput];
-        _cameraDevice.delegate=nil;
-    }
-    _cameraDevice=[[LFCameraDevice alloc] init:_videoConfig];
-    _cameraDevice.orientation=(_orientation==UIInterfaceOrientationUnknown?UIInterfaceOrientationPortrait:_orientation);
-    if(_logoView){
-        [_cameraDevice setLogoView:_logoView];
-    }
-    if(_filterType){
-        [_cameraDevice setFilterType:_filterType];
-    }
-    if(_zoomScale){
-        [_cameraDevice setVideoZoomScale:_zoomScale andError:nil andfinish:nil];
-    }
-    if(_devicePosition){
-        [_cameraDevice setDevicePosition:_devicePosition];
-    }
-    if(_isOpenFlash){
-        [_cameraDevice setIsOpenFlash:_isOpenFlash];
-    }
+-(void)getStreamLength{
     
-    [_cameraDevice setPreview:_preview];
-    _cameraDevice.delegate=self;
-    //配置视频编码器
-    if(_videoEncode){
-        [_videoEncode stopEncode];
+    NSData *data=[_rtmpChunkFormat getStreamLengthChunkFormat:_urlParser.streamName];
+    if(data.length){
+        if([self write:(char *)[data bytes] length:(int)data.length isPacket:YES]){
+            NSLog(@"--------------RTMP：发送getStreamLength成功！--------------");
+        }else{
+            NSLog(@"--------------RTMP：发送getStreamLength失败！--------------");
+        }
     }
-    if([[UIDevice currentDevice].systemVersion floatValue] < 8.0){
-        _videoEncode=[[LFVideoSoftEncode alloc] init:_videoConfig];
-    }else{
-        //ios8以后使用VideoToolbox实现硬编码
-        _videoEncode=[[LFVideoHardEncode alloc] init:_videoConfig];
-    }
-    [_videoEncode setDelegate:self];
-    [self startRecord];
 }
+/**
+ *  play
+ */
+-(void)playStream{
+    __weak __typeof(self)weakSelf = self;
+    dispatch_async(dispatch_get_main_queue(), ^{
+        __strong __typeof(weakSelf)strongSelf = weakSelf;
+        if(strongSelf.delegate&&[strongSelf.delegate respondsToSelector:@selector(onRtmpPlayStatusChange:)]){
+            [strongSelf.delegate onRtmpPlayStatusChange:LFRTMPPlayStatusPlaySending];
+        }
+    });
+    NSData *data=[_rtmpChunkFormat playChunkFormat:_urlParser.streamName];
+    if(data.length){
+        if([self write:(char *)[data bytes] length:(int)data.length isPacket:YES]){
+            NSLog(@"--------------RTMP：发送play成功！--------------");
+        }else{
+            NSLog(@"--------------RTMP：发送play失败！--------------");
+            dispatch_async(dispatch_get_main_queue(), ^{
+                __strong __typeof(weakSelf)strongSelf = weakSelf;
+                if(strongSelf.delegate&&[strongSelf.delegate respondsToSelector:@selector(onRtmpPlayStatusChange:)]){
+                    [strongSelf.delegate onRtmpPlayStatusChange:LFRTMPPlayStatusPlayFail];
+                }
+            });
+        }
+    }
+}
+/**
+ *  setBufferLength
+ */
+//-(void)setBufferLength{
+//    
+//    NSData *data=[_rtmpChunkFormat setBufferLengthChunkFormat:_streamID bufferSize:3000];
+//    if(data.length){
+//        if([self write:(char *)[data bytes] length:(int)data.length isPacket:YES]){
+//            NSLog(@"--------------RTMP：发送setBufferLength成功！--------------");
+//        }else{
+//            NSLog(@"--------------RTMP：发送setBufferLength失败！--------------");
+//        }
+//    }
+//}
 
+#pragma mark ---------LFVideoDecodeDelegate---------
 /**
- *  启动采集
+ *  返回解码后的数据
+ *  @param playConfig
+ *  @return instancetype
  */
--(void)startRecord{
-    [_micDivice startOuput];
-    [_cameraDevice startOuput];
-}
-/**
- *  停止采集
- */
--(void)stopRecord{
-    [_micDivice stopOutput];
-    [_cameraDevice stopOutput];
-}
-#pragma mark LFMicDeviceDelegate
-/**
- *  音频采集到的PCM数据输出
- */
--(void)onMicOutputData:(AudioBufferList)audioBufferList{
-    if(_isPublishReady&&_isSocketConnect){
-        //AAC编码
-        NSData *data=[_aacEncode encode:audioBufferList];
-        __weak __typeof(self)weakSelf = self;
-        dispatch_async(_qunue, ^{
-            __strong __typeof(weakSelf)strongSelf = weakSelf;
-            [strongSelf sendAudioPacket:data];
+-(void)onDidVideoDecodeOutput:(CVPixelBufferRef)pixelBuffer{
+    if(pixelBuffer) {
+        dispatch_sync(dispatch_get_main_queue(), ^{
+            _glLayer.pixelBuffer = pixelBuffer;
         });
+        CVPixelBufferRelease(pixelBuffer);
     }
 }
-#pragma mark LFCameraDeviceDelegate
-/**
- *  摄像头采集到的数据输出
- */
--(void)onCameraOutputData:(CVImageBufferRef)buffer{
-    if(_isPublishReady&&_isSocketConnect){
-        [_videoEncode encode:buffer timeStamp:[_rtmpChunkFormat currentTimestamp]];
-    }
-}
-#pragma mark LFVideoEncodeDelegate
--(void)onDidVideoEncodeOutput:(LFVideoEncodeInfo *)info{
-    if(_isPublishReady&&_isSocketConnect){
-        __weak __typeof(self)weakSelf = self;
-        dispatch_async(_qunue, ^{
-            __strong __typeof(weakSelf)strongSelf = weakSelf;
-            [strongSelf sendVideoPacket:info];
-        });
-    }
-}
-
 #pragma mark private method
 /**
  *  是否ipv4的地址
@@ -1315,10 +1006,5 @@
     }
     return NO;
 }
--(void)dealloc{
-    [[NSNotificationCenter defaultCenter] removeObserver:self
-                                                    name:UIApplicationDidReceiveMemoryWarningNotification
-                                                  object:nil];
-    
-}
+
 @end

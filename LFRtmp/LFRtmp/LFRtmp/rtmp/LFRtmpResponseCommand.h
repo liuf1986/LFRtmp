@@ -3,13 +3,17 @@
 //  myrtmp
 //
 //  Created by liuf on 16/7/28.
-// 
+//
 //
 /**
  *  rtmp中命令消息的body包装类，body是AMF0协议
  */
 #define kLFRtmpConnectSuccess @"NetConnection.Connect.Success"
 #define kLFRtmpPublishStart @"NetStream.Publish.Start"
+#define kLFRtmpPublishBadName @"NetStream.Publish.BadName"
+#define kLFRtmpPlayStart @"NetStream.Play.Start"
+#define kLFRtmpPlayReset @"NetStream.Play.Reset"
+#define kLFRtmpPlayStreamNotFound @"NetStream.Play.StreamNotFound"
 #import <Foundation/Foundation.h>
 typedef enum : char {
     LFRtmpResponseCommand_Result=0x1,//_Result命令
@@ -17,6 +21,7 @@ typedef enum : char {
     LFRtmpResponseCommandOnFCPublish=0x3,//OnFCPublish命令
     LFRtmpResponseCommandOnStatus=0x4,//OnStatus命令
     LFRtmpResponseCommandOnFCUnpublish=0x5,//OnFCUnpublish命令
+    LFRtmpResponseCommandOnMetaData=0x6,//OnMetaData命令
     LFRtmpResponseCommandUnkonwn=0x7f //未知类型
     
 } LFRtmpResponseCommandType;
@@ -26,6 +31,7 @@ typedef enum : char {
 @property (assign,nonatomic,readonly) int transactionID;//事务id
 @property (strong,nonatomic,readonly) NSObject *commandObject;//命令对象参数
 @property (strong,nonatomic,readonly) NSObject *optionObject;//可选参数
+@property (strong,nonatomic,readonly) NSMutableArray  *allData;
 @property (assign,nonatomic,readonly) LFRtmpResponseCommandType commandType;
 /**
  *  初始化
