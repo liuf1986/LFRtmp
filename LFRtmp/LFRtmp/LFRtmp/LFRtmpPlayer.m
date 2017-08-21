@@ -72,16 +72,17 @@
     __weak __typeof(self)weakSelf = self;
     dispatch_async(_qunue, ^{
         __strong __typeof(weakSelf)strongSelf = weakSelf;
-        while (![self connect:_urlParser.domain port:_urlParser.port]) {
+        if(![strongSelf connect:_urlParser.domain port:_urlParser.port]) {
             dispatch_async(dispatch_get_main_queue(), ^{
                 if(strongSelf.delegate&&[strongSelf.delegate respondsToSelector:@selector(onRtmpPlayStatusChange:)]){
                     [strongSelf.delegate onRtmpPlayStatusChange:LFRTMPPlayStatusConnectionFail];
                 }
             });
-            [[NSRunLoop currentRunLoop] runUntilDate:[NSDate dateWithTimeIntervalSinceNow:0.01f]];
+            
+        }else{
+            _isListenSocket=YES;
+            [strongSelf listenSocketRecv];
         }
-        _isListenSocket=YES;
-        [strongSelf listenSocketRecv];
     });
 }
 
