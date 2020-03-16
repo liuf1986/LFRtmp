@@ -17,7 +17,6 @@
   "DVTSourceControlWorkspaceBlueprintRelativePathToProjectKey" : "rtmp\/LFRtmp\/LFRtmp.xcodeproj",
   "DVTSourceControlWorkspaceBlueprintRemoteRepositoriesKey" : [
     {
-      "DVTSourceControlWorkspaceBlueprintRemoteRepositoryURLKey" : "svn:\/\/10.101.0.16:1023\/IOSTechnology",
       "DVTSourceControlWorkspaceBlueprintRemoteRepositorySystemKey" : "com.apple.dt.Xcode.sourcecontrol.Subversion",
       "DVTSourceControlWorkspaceBlueprintRemoteRepositoryIdentifierKey" : "351e5307-0a02-4c7d-8452-6e77f89c443f"
     }
